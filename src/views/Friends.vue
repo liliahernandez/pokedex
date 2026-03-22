@@ -19,6 +19,7 @@ const socketStatus = ref('Desconectado');
 onMounted(() => {
     userStore.fetchFriends();
     userStore.fetchTeams();
+    userStore.fetchPendingRequests(); // Get requests if notifications failed
     
     // Check socket
     const interval = setInterval(() => {
@@ -59,6 +60,17 @@ const removeFriend = async (friendId) => {
     }
 };
 
+const acceptPending = async (friendId) => {
+    try {
+        await userStore.acceptFriendRequest(friendId);
+        challengeSuccess.value = '¡Solicitud aceptada!';
+        userStore.fetchPendingRequests();
+        setTimeout(() => challengeSuccess.value = '', 3000);
+    } catch (err) {
+        error.value = err;
+    }
+};
+
 const openChallengeModal = (friendId) => {
     selectedFriendId.value = friendId;
     selectedTeamId.value = '';
@@ -90,6 +102,25 @@ const copyCode = () => {
     if (authStore.user?.friendCode) {
         navigator.clipboard.writeText(authStore.user.friendCode);
         alert('¡Código copiado!');
+const resetPWA = async () => {
+    if (!confirm('¿Estás seguro? Esto borrará el caché del móvil y reiniciará la App para forzar la actualización.')) return;
+    try {
+        // 1. Unregister all SW
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (let reg of regs) await reg.unregister();
+        
+        // 2. Clear IDB
+        const DB_NAME = 'offline-store';
+        indexedDB.deleteDatabase(DB_NAME);
+        
+        // 3. Clear Cache
+        const keys = await caches.keys();
+        for (let key of keys) await caches.delete(key);
+        
+        alert('Limpieza completada. Reiniciando...');
+        window.location.reload(true);
+    } catch (e) {
+        alert('Error al reiniciar: ' + e.message);
     }
 };
 </script>
@@ -112,7 +143,22 @@ const copyCode = () => {
                 <button class="btn" @click="sendFriendRequest">Enviar Solicitud</button>
             </div>
             <p v-if="error" class="error">{{ error }}</p>
-            <p v-if="challengeSuccess && !showTeamModal" class="success">{{ challengeSuccess }}</p>
+            <p v-if="challengeSuccess && !showTeamModal && !userStore.pendingRequests.length" class="success">{{ challengeSuccess }}</p>
+        </div>
+
+        <div v-if="userStore.pendingRequests.length > 0" class="pending-requests glass-panel">
+            <h3>Solicitudes Pendientes</h3>
+            <ul>
+                <li v-for="req in userStore.pendingRequests" :key="req.id" class="friend-item">
+                    <div class="friend-info">
+                        <strong>{{ req.name || req.email }}</strong>
+                        <small>{{ req.friendCode }}</small>
+                    </div>
+                    <div class="friend-actions">
+                        <button class="btn challenge-btn" @click="acceptPending(req.id)">Aceptar</button>
+                    </div>
+                </li>
+            </ul>
         </div>
 
         <div class="friends-list glass-panel">
@@ -160,10 +206,14 @@ const copyCode = () => {
             </div>
         </div>
         <!-- Debug Info (for development) -->
-        <div class="debug-panel glass-panel" style="margin-top: 2rem; font-size: 0.7rem; opacity: 0.5;">
+        <div class="debug-panel glass-panel" style="margin-top: 2rem; font-size: 0.7rem; opacity: 0.7;">
+            <p><strong>🔍 Diagnóstico:</strong></p>
             <p>Backend: {{ apiUrl }}</p>
             <p>Socket: {{ socketStatus }}</p>
             <p>Usuario: {{ authStore.user?.email }}</p>
+            <button @click="resetPWA" style="margin-top: 10px; background: #444; color: #ff6b6b; border: 1px solid #ff6b6b; padding: 5px; border-radius: 4px; font-weight: bold; width: 100%;">
+                LIMPIAR Y REINICIAR APP 🔄
+            </button>
         </div>
     </div>
 </template>

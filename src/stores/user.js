@@ -6,7 +6,8 @@ export const useUserStore = defineStore('user', {
     state: () => ({
         favorites: [],
         teams: [],
-        friends: []
+        friends: [],
+        pendingRequests: []
     }),
     actions: {
         async fetchFavorites() {
@@ -55,6 +56,14 @@ export const useUserStore = defineStore('user', {
                 this.friends = response.data.friends;
             } catch (error) {
                 console.error('Error fetching friends', error);
+            }
+        },
+        async fetchPendingRequests() {
+            try {
+                const response = await api.get('/auth/friends/pending');
+                this.pendingRequests = response.data.pending || [];
+            } catch (error) {
+                console.error('Error fetching pending requests', error);
             }
         },
         async sendFriendRequest(friendCode) {

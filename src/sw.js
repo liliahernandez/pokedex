@@ -1,6 +1,5 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 import { clientsClaim } from 'workbox-core';
-import { openDB } from 'idb';
 
 self.skipWaiting();
 clientsClaim();
@@ -9,27 +8,46 @@ clientsClaim();
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
-// Persistent Config Helper
+// Persistent Config Helper (Native IDB to avoid ES Module issues in some browsers)
 const DB_NAME = 'offline-store';
 const AUTH_STORE = 'auth';
 
-async function getStoredConfig() {
-    try {
-        const db = await openDB(DB_NAME, 1);
-        const token = await db.get(AUTH_STORE, 'token');
-        const apiUrl = await db.get(AUTH_STORE, 'apiUrl');
-        return { token, apiUrl };
-    } catch (e) {
-        console.error('[SW] Config retrieval failed', e);
-        return {};
-    }
+function openDBNative() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains(AUTH_STORE)) {
+                db.createObjectStore(AUTH_STORE);
+            }
+        };
+    });
 }
 
-async function saveApiUrl(url) {
-    try {
-        const db = await openDB(DB_NAME, 1);
-        await db.put(AUTH_STORE, url, 'apiUrl');
-    } catch (e) {}
+function getFromDB(storeName, key) {
+    return openDBNative().then(db => {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(storeName, 'readonly');
+            const store = transaction.objectStore(storeName);
+            const request = store.get(key);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    });
+}
+
+function saveToDB(storeName, key, value) {
+    return openDBNative().then(db => {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(storeName, 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const request = store.put(value, key);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    });
 }
 
 let cachedApiUrl = 'https://be-production-c80c.up.railway.app'; 
@@ -42,8 +60,8 @@ self.addEventListener('message', (event) => {
         }
         if (event.data.type === 'SET_CONFIG' && event.data.apiUrl) {
             cachedApiUrl = event.data.apiUrl;
-            saveApiUrl(event.data.apiUrl);
-            console.log('[SW] API URL updated and stored:', cachedApiUrl);
+            saveToDB(AUTH_STORE, 'apiUrl', event.data.apiUrl).catch(() => {});
+            console.log('[SW] API URL updated:', cachedApiUrl);
         }
     }
 });
@@ -79,15 +97,18 @@ async function handleNotificationAction(action, data, notification) {
         return;
     }
 
-    const { token, apiUrl } = await getStoredConfig();
+    // Get config from DB
+    const token = await getFromDB(AUTH_STORE, 'token').catch(() => null);
+    const apiUrl = await getFromDB(AUTH_STORE, 'apiUrl').catch(() => null);
+    
     const activeApiUrl = apiUrl || cachedApiUrl;
     const cleanBaseUrl = activeApiUrl.replace(/\/+$/, '');
 
-    console.log(`[SW] Handling action: ${action} with API: ${cleanBaseUrl}`);
+    console.log(`[SW] Action: ${action} | Token: ${token ? 'YES' : 'NO'} | API: ${cleanBaseUrl}`);
 
     try {
         if (action === 'accept-friend' && data.requesterId) {
-            if (!token) throw new Error('No hay sesión activa. Abre la app.');
+            if (!token) throw new Error('No hay sesión. Abre la app.');
 
             const response = await fetch(`${cleanBaseUrl}/auth/friends`, {
                 method: 'POST',
@@ -100,7 +121,7 @@ async function handleNotificationAction(action, data, notification) {
             
             if (!response.ok) {
                 const errData = await response.json().catch(() => ({}));
-                throw new Error(errData.error || `Error ${response.status}`);
+                throw new Error(errData.error || `Servidor: ${response.status}`);
             }
 
             self.registration.showNotification('¡Amistad Aceptada! 🤝', {
