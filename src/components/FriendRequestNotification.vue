@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { getSocket } from '../services/socket';
 import { useUserStore } from '../stores/user';
+import { notificationService } from '../services/notifications';
 
 const showing = ref(false);
 const requestData = ref(null);
@@ -21,6 +22,12 @@ const setupSocketListener = () => {
         socket.on('friend_request', (data) => {
             requestData.value = data;
             showing.value = true;
+
+            // Show native notification
+            notificationService.show('¡Solicitud de Amistad! 🤝', {
+                body: `${data.requesterName || data.requesterEmail} quiere ser tu amigo.`,
+                tag: 'friend-request'
+            });
         });
     }
 };

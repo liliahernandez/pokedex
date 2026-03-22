@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { getSocket } from '../services/socket';
 import { useRouter } from 'vue-router';
+import { notificationService } from '../services/notifications';
 
 const router = useRouter();
 const showing = ref(false);
@@ -20,6 +21,12 @@ const setupSocketListener = () => {
         socket.on('battle_request', (data) => {
             challengeData.value = data;
             showing.value = true;
+            
+            // Show native notification
+            notificationService.show('¡Desafío de Batalla! ⚔️', {
+                body: `${data.challengerName || data.challengerEmail} te ha desafiado a una batalla.`,
+                tag: 'battle-request'
+            });
         });
     }
 };

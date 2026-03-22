@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
-import api from '../services/api';
+import { api } from '../services/api';
 import { initSocket, disconnectSocket } from '../services/socket';
+import { notificationService } from '../services/notifications';
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
@@ -32,8 +33,12 @@ export const useAuthStore = defineStore('auth', {
             this.user = data.user;
             this.isAuthenticated = true;
             sessionStorage.setItem('token', data.token);
+            
             // Connect to real-time events immediately
             initSocket(data.token);
+            
+            // Ask for notification permission (premium feature)
+            notificationService.requestPermission();
         },
         logout() {
             this.token = null;
