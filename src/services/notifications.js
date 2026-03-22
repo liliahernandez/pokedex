@@ -36,6 +36,7 @@ class NotificationService {
             badge: '/icon.svg',
             vibrate: [200, 100, 200],
             silent: false,
+            renotify: true, // Allow replacing old notifications
             // Allow actions (buttons) and data (metadata for SW)
             actions: options.actions || [],
             data: options.data || {}

@@ -4,10 +4,12 @@ import * as socketService from '../services/socket';
 import { notificationService } from '../services/notifications';
 
 const handleBattleRequest = (data) => {
-    // Show native notification with actions
-    notificationService.show('¡Desafío de Batalla! ⚔️', {
-        body: `${data.challengerName || data.challengerEmail} te ha desafiado a una batalla.`,
+    // ONLY native notification as requested
+    notificationService.show('Desafío de Batalla ⚔️', {
+        body: `${data.challengerName || data.challengerEmail} te ha desafiado.`,
         tag: 'battle-request',
+        renotify: true,
+        vibrate: [200, 100, 200, 100, 200],
         actions: [
             { action: 'accept-battle', title: 'ACEPTAR' },
             { action: 'reject-battle', title: 'RECHAZAR' }
@@ -29,7 +31,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <!-- No in-app UI for battle notifications, using native system notifications only -->
+  <!-- No in-app UI, using native system notifications only as requested -->
 </template>
 
 <style scoped>
