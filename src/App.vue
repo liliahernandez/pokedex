@@ -29,7 +29,10 @@ watch(() => authStore.isAuthenticated, (val) => {
 }, { immediate: true });
 
 // PWA Update Logic
-onMounted(() => {
+onMounted(async () => {
+    // Restore authentication from storage (critical for PWA)
+    await authStore.initAuth();
+
     if ('serviceWorker' in navigator) {
         // Detect update available
         navigator.serviceWorker.ready.then(registration => {

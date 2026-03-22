@@ -2,15 +2,31 @@ import { defineStore } from 'pinia';
 import api from '../services/api';
 import { initSocket, disconnectSocket } from '../services/socket';
 import { notificationService } from '../services/notifications';
-import { saveAuthToken } from '../services/offlineStorage';
+import { getAuthToken, saveAuthToken } from '../services/offlineStorage';
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         user: null,
-        token: sessionStorage.getItem('token') || null,
-        isAuthenticated: !!sessionStorage.getItem('token')
+        token: null,
+        isAuthenticated: false
     }),
     actions: {
+        async initAuth() {
+            // 1. Try sessionStorage (fastest)
+            let token = sessionStorage.getItem('token');
+            
+            // 2. Try IndexedDB (persistent fallback)
+            if (!token) {
+                token = await getAuthToken();
+            }
+
+            if (token) {
+                this.token = token;
+                this.isAuthenticated = true;
+                // Verify with server
+                await this.fetchProfile();
+            }
+        },
         async register(email, password, name, nickname) {
             try {
                 const response = await api.post('/auth/register', { email, password, name, nickname });

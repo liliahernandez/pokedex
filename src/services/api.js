@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { saveRequest } from './offlineStorage';
+import { saveRequest, getAuthToken } from './offlineStorage';
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
@@ -9,8 +9,15 @@ const api = axios.create({
 });
 
 // Interceptor to add token to requests
-api.interceptors.request.use(config => {
-    const token = sessionStorage.getItem('token');
+api.interceptors.request.use(async config => {
+    // 1. Try sessionStorage (fastest)
+    let token = sessionStorage.getItem('token');
+    
+    // 2. Try IndexedDB (fallback for PWAs)
+    if (!token) {
+        token = await getAuthToken();
+    }
+    
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
