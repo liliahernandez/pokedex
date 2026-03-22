@@ -8,7 +8,7 @@ clientsClaim();
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
-// Persistent Config Helper (Native IDB to avoid ES Module issues in some browsers)
+// Persistent Config Helper
 const DB_NAME = 'offline-store';
 const AUTH_STORE = 'auth';
 const bc = new BroadcastChannel('pokedex-sync');
@@ -53,7 +53,7 @@ function saveToDB(storeName, key, value) {
 
 let cachedApiUrl = 'https://be-production-c80c.up.railway.app'; 
 
-// Message listener for SKIP_WAITING and CONFIG
+// Message listener
 self.addEventListener('message', (event) => {
     if (event.data) {
         if (event.data.type === 'SKIP_WAITING') {
@@ -73,104 +73,94 @@ self.addEventListener('notificationclick', (event) => {
     const action = event.action;
     const data = notification.data || {};
 
-    event.waitUntil(handleNotificationAction(action, data, notification));
+    notification.close();
+    event.waitUntil(handleNotificationAction(action, data));
 });
 
-async function focusOrOpenApp() {
-    const urlToOpen = new URL('/', self.location.origin).href;
+async function openOrFocusApp(urlHash) {
+    const baseUrl = new URL('/', self.location.origin).href;
+    const targetUrl = urlHash ? baseUrl + urlHash : baseUrl;
+    
     const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
     
+    // Try to focus any existing window and send message
     for (let client of windowClients) {
-        if (client.url === urlToOpen && 'focus' in client) {
-            return client.focus();
+        if ('focus' in client) {
+            await client.focus();
+            // Give the app a moment to gain focus, then send the action
+            return client;
         }
     }
     
+    // No window open: open the app
     if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
+        return clients.openWindow(targetUrl);
     }
 }
 
-async function handleNotificationAction(action, data, notification) {
-    if (!action) {
-        await focusOrOpenApp();
-        notification.close();
+async function handleNotificationAction(action, data) {
+    console.log(`[SW] Notification action: ${action}`, data);
+
+    if (action === 'accept-friend' && data.requesterId) {
+        // STRATEGY: Tell the open App to accept using its own valid session.
+        // The SW broadcasts to the app, and the app (which has the token in memory) does the API call.
+        bc.postMessage({
+            type: 'ACCEPT_FRIEND_REQUEST',
+            requesterId: data.requesterId
+        });
+
+        // Also try to accept from SW background as a parallel attempt with DB token
+        try {
+            const token = await getFromDB(AUTH_STORE, 'token').catch(() => null);
+            const apiUrlFromDB = await getFromDB(AUTH_STORE, 'apiUrl').catch(() => null);
+            const cleanBaseUrl = (apiUrlFromDB || cachedApiUrl).replace(/\/+$/, '');
+
+            console.log(`[SW] Background accept attempt | Token: ${token ? 'YES' : 'NO'}`);
+
+            if (token) {
+                const response = await fetch(`${cleanBaseUrl}/auth/friends`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ friendId: data.requesterId, action: 'accept_request' })
+                });
+
+                if (response.ok) {
+                    console.log('[SW] Background accept succeeded!');
+                    // Notify all clients to refresh
+                    bc.postMessage({ type: 'REFRESH_FRIENDS' });
+                    const windowClients = await clients.matchAll({ type: 'window' });
+                    for (const client of windowClients) {
+                        client.postMessage({ type: 'REFRESH_FRIENDS' });
+                    }
+                    self.registration.showNotification('¡Amistad Aceptada! 🤝', {
+                        body: 'Ahora son amigos. ¡Genial!',
+                        icon: '/icon.svg'
+                    });
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn('[SW] Background accept failed, app will handle:', e.message);
+        }
+
+        // Open the app so it can accept using its in-memory token
+        await openOrFocusApp();
         return;
     }
 
-    // Get config from DB
-    console.log('[SW] Attempting to retrieve token from DB...');
-    const token = await getFromDB(AUTH_STORE, 'token').catch((err) => {
-        console.error('[SW] DB Error:', err);
-        return null;
-    });
-    
-    const apiUrlFromDB = await getFromDB(AUTH_STORE, 'apiUrl').catch(() => null);
-    const activeApiUrl = apiUrlFromDB || cachedApiUrl;
-    const cleanBaseUrl = activeApiUrl.replace(/\/+$/, '');
-
-    console.log(`[SW] Action: ${action} | Token: ${token ? 'YES' : 'NO'} | API: ${cleanBaseUrl}`);
-
-    // Notify the open App (if any) to assist with the action
-    bc.postMessage({
-        type: 'NOTIFICATION_ACTION',
-        action,
-        data,
-        token
-    });
-
-    try {
-        if (action === 'accept-friend' && data.requesterId) {
-            if (!token) throw new Error('No hay sesión. Abre la app.');
-
-            const response = await fetch(`${cleanBaseUrl}/auth/friends`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ friendId: data.requesterId, action: 'accept_request' })
-            });
-            
-            if (!response.ok) {
-                const errData = await response.json().catch(() => ({}));
-                throw new Error(errData.error || `Servidor: ${response.status}`);
-            }
-
-            self.registration.showNotification('¡Amistad Aceptada! 🤝', {
-                body: 'Ahora son amigos. ¡Genial!',
-                icon: '/icon.svg'
-            });
-
-            await notifyClientsToRefresh();
-        }
-        
-        if (action === 'reject-friend') {
-            notification.close();
-        }
-
-        if (action === 'accept-battle') {
-            await focusOrOpenApp();
-        }
-
-    } catch (error) {
-        console.error('[SW] Action failed:', error);
-        self.registration.showNotification('Error 🤔', {
-            body: `${error.message}`,
-            icon: '/icon.svg'
-        });
-        await focusOrOpenApp();
-    } finally {
-        notification.close();
+    if (action === 'reject-friend') {
+        // Just close, already done
+        return;
     }
-}
 
-async function notifyClientsToRefresh() {
-    // Method 1: postMessage to all open windows via SW clients
-    const windowClients = await clients.matchAll({ type: 'window' });
-    for (const client of windowClients) {
-        client.postMessage({ type: 'REFRESH_FRIENDS' });
+    if (action === 'accept-battle') {
+        await openOrFocusApp();
+        return;
     }
-    // Method 2: BroadcastChannel (reaches backgrounded app contexts too)
-    bc.postMessage({ type: 'REFRESH_FRIENDS' });
+
+    // Default: just open the app
+    await openOrFocusApp();
 }

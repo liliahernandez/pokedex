@@ -163,19 +163,27 @@ export const useUserStore = defineStore('user', {
             // BroadcastChannel for cross-context sync (SW to App)
             const syncChannel = new BroadcastChannel('pokedex-sync');
             syncChannel.onmessage = async (event) => {
-                if (event.data && event.data.type === 'NOTIFICATION_ACTION') {
-                    const { action, data } = event.data;
-                    console.log(`[UserStore] Action received via BroadcastChannel: ${action}`);
-                    
-                    if (action === 'accept-friend' && data.requesterId) {
-                        // Accept the request AND refresh this device's friends list right after
-                        await this.acceptFriendRequest(data.requesterId);
+                const msg = event.data;
+                if (!msg) return;
+
+                if (msg.type === 'ACCEPT_FRIEND_REQUEST' && msg.requesterId) {
+                    // The SW told us to accept — we do it with our valid in-memory token
+                    console.log('[UserStore] Accepting friend request from BroadcastChannel, requesterId:', msg.requesterId);
+                    await this.acceptFriendRequest(msg.requesterId);
+                    await this.fetchFriends();
+                }
+
+                if (msg.type === 'NOTIFICATION_ACTION') {
+                    // Legacy: handle old format
+                    if (msg.action === 'accept-friend' && msg.data?.requesterId) {
+                        await this.acceptFriendRequest(msg.data.requesterId);
                         await this.fetchFriends();
                     }
                 }
-                if (event.data && event.data.type === 'REFRESH_FRIENDS') {
-                    // SW accepted for us in background — just refresh this side
-                    console.log('[UserStore] SW accepted, refreshing friends...');
+
+                if (msg.type === 'REFRESH_FRIENDS') {
+                    // SW accepted in background — just refresh our list
+                    console.log('[UserStore] SW REFRESH_FRIENDS received, refreshing...');
                     await this.fetchFriends();
                 }
             };
