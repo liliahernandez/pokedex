@@ -102,6 +102,9 @@ const copyCode = () => {
     if (authStore.user?.friendCode) {
         navigator.clipboard.writeText(authStore.user.friendCode);
         alert('¡Código copiado!');
+    }
+};
+
 const resetPWA = async () => {
     if (!confirm('¿Estás seguro? Esto borrará el caché del móvil y reiniciará la App para forzar la actualización.')) return;
     try {
@@ -162,7 +165,10 @@ const resetPWA = async () => {
         </div>
 
         <div class="friends-list glass-panel">
-            <h3>Mis Amigos</h3>
+            <div class="list-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>Mis Amigos</h3>
+                <button @click="userStore.fetchFriends" class="btn secondary" style="padding: 2px 8px; font-size: 0.7rem;">RECARGAR ↻</button>
+            </div>
             <div v-if="userStore.friends.length === 0">Aún no tienes amigos. ¡Comparte tu código!</div>
             <ul v-else>
                 <li v-for="friend in userStore.friends" :key="friend._id || friend.id" class="friend-item">

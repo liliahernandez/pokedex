@@ -52,7 +52,7 @@ export const useUserStore = defineStore('user', {
         },
         async fetchFriends() {
             try {
-                const response = await api.get('/auth/friends');
+                const response = await api.get(`/auth/friends?t=${Date.now()}`);
                 this.friends = response.data.friends;
             } catch (error) {
                 console.error('Error fetching friends', error);
@@ -123,6 +123,12 @@ export const useUserStore = defineStore('user', {
             }
         },
         listenForFriendEvents() {
+            socketService.on('connect', () => {
+                console.log('[UserStore] Socket connected, refreshing data...');
+                this.fetchFriends();
+                this.fetchPendingRequests();
+            });
+
             // Use NEW persistent listener system
             socketService.on('friendship_updated', (data) => {
                 console.log('[UserStore] Friendship updated, refreshing list...', data);
