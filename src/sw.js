@@ -98,10 +98,14 @@ async function handleNotificationAction(action, data, notification) {
     }
 
     // Get config from DB
-    const token = await getFromDB(AUTH_STORE, 'token').catch(() => null);
-    const apiUrl = await getFromDB(AUTH_STORE, 'apiUrl').catch(() => null);
+    console.log('[SW] Attempting to retrieve token from DB...');
+    const token = await getFromDB(AUTH_STORE, 'token').catch((err) => {
+        console.error('[SW] DB Error:', err);
+        return null;
+    });
     
-    const activeApiUrl = apiUrl || cachedApiUrl;
+    const apiUrlFromDB = await getFromDB(AUTH_STORE, 'apiUrl').catch(() => null);
+    const activeApiUrl = apiUrlFromDB || cachedApiUrl;
     const cleanBaseUrl = activeApiUrl.replace(/\/+$/, '');
 
     console.log(`[SW] Action: ${action} | Token: ${token ? 'YES' : 'NO'} | API: ${cleanBaseUrl}`);

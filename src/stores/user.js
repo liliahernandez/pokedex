@@ -141,6 +141,11 @@ export const useUserStore = defineStore('user', {
                 this.fetchFriends();
             });
 
+            socketService.on('friend_request', (data) => {
+                console.log('[UserStore] New friend request received, refreshing pending list...', data);
+                this.fetchPendingRequests();
+            });
+
             // Also listen for messages from the Service Worker
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.addEventListener('message', (event) => {

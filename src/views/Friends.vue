@@ -16,19 +16,23 @@ const challengeSuccess = ref('');
 const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const socketStatus = ref('Desconectado');
 
+const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+        console.log('[Friends] App focused, auto-refreshing...');
+        userStore.fetchFriends();
+        userStore.fetchPendingRequests();
+    }
+};
+
 onMounted(() => {
     userStore.fetchFriends();
-    userStore.fetchTeams();
-    userStore.fetchPendingRequests(); // Get requests if notifications failed
-    
-    // Check socket
-    const interval = setInterval(() => {
-        const socket = userStore.getSocket?.() || null;
-        if (socket?.connected) {
-            socketStatus.value = 'Conectado ✅';
-            clearInterval(interval);
-        }
-    }, 1000);
+    userStore.fetchPendingRequests();
+    userStore.listenForFriendEvents();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
 });
 
 const sendFriendRequest = async () => {
@@ -149,26 +153,10 @@ const resetPWA = async () => {
             <p v-if="challengeSuccess && !showTeamModal && !userStore.pendingRequests.length" class="success">{{ challengeSuccess }}</p>
         </div>
 
-        <div v-if="userStore.pendingRequests.length > 0" class="pending-requests glass-panel">
-            <h3>Solicitudes Pendientes</h3>
-            <ul>
-                <li v-for="req in userStore.pendingRequests" :key="req.id" class="friend-item">
-                    <div class="friend-info">
-                        <strong>{{ req.name || req.email }}</strong>
-                        <small>{{ req.friendCode }}</small>
-                    </div>
-                    <div class="friend-actions">
-                        <button class="btn challenge-btn" @click="acceptPending(req.id)">Aceptar</button>
-                    </div>
-                </li>
-            </ul>
-        </div>
+        <!-- Solicitudes Pendientes removed as per user request -->
 
         <div class="friends-list glass-panel">
-            <div class="list-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <h3>Mis Amigos</h3>
-                <button @click="userStore.fetchFriends" class="btn secondary" style="padding: 2px 8px; font-size: 0.7rem;">RECARGAR ↻</button>
-            </div>
+            <h3>Mis Amigos</h3>
             <div v-if="userStore.friends.length === 0">Aún no tienes amigos. ¡Comparte tu código!</div>
             <ul v-else>
                 <li v-for="friend in userStore.friends" :key="friend._id || friend.id" class="friend-item">
@@ -211,16 +199,7 @@ const resetPWA = async () => {
                 </div>
             </div>
         </div>
-        <!-- Debug Info (for development) -->
-        <div class="debug-panel glass-panel" style="margin-top: 2rem; font-size: 0.7rem; opacity: 0.7;">
-            <p><strong>🔍 Diagnóstico:</strong></p>
-            <p>Backend: {{ apiUrl }}</p>
-            <p>Socket: {{ socketStatus }}</p>
-            <p>Usuario: {{ authStore.user?.email }}</p>
-            <button @click="resetPWA" style="margin-top: 10px; background: #444; color: #ff6b6b; border: 1px solid #ff6b6b; padding: 5px; border-radius: 4px; font-weight: bold; width: 100%;">
-                LIMPIAR Y REINICIAR APP 🔄
-            </button>
-        </div>
+        <!-- Diagnostic panel removed as per user request -->
     </div>
 </template>
 
