@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router';
 const email = ref('');
 const password = ref('');
 const name = ref('');
+const nickname = ref('');
 const error = ref('');
 const loading = ref(false);
 
@@ -16,7 +17,7 @@ const handleRegister = async () => {
     loading.value = true;
     error.value = '';
     try {
-        await authStore.register(email.value, password.value, name.value);
+        await authStore.register(email.value, password.value, name.value, nickname.value);
         // Clear auto-login state to force manual login as requested
         authStore.logout();
         router.push('/login');
@@ -36,6 +37,10 @@ const handleRegister = async () => {
                 <div class="form-group">
                     <label>Nombre *</label>
                     <input type="text" v-model="name" required placeholder="Ash Ketchum" />
+                </div>
+                <div class="form-group">
+                    <label>Apodo (Opcional)</label>
+                    <input type="text" v-model="nickname" placeholder="El Maestro" />
                 </div>
                 <div class="form-group">
                     <label>Correo Electrónico *</label>

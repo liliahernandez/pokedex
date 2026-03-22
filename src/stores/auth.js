@@ -9,9 +9,9 @@ export const useAuthStore = defineStore('auth', {
         isAuthenticated: !!sessionStorage.getItem('token')
     }),
     actions: {
-        async register(email, password, name) {
+        async register(email, password, name, nickname) {
             try {
-                const response = await api.post('/auth/register', { email, password, name });
+                const response = await api.post('/auth/register', { email, password, name, nickname });
                 this.setAuth(response.data);
                 return response.data;
             } catch (error) {
