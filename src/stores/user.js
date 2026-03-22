@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import api from '../services/api';
-import { getSocket } from '../services/socket';
+import * as socketService from '../services/socket';
 
 export const useUserStore = defineStore('user', {
     state: () => ({
@@ -114,14 +114,11 @@ export const useUserStore = defineStore('user', {
             }
         },
         listenForFriendEvents() {
-            const socket = getSocket();
-            if (socket) {
-                // Listen for multi-user sync events
-                socket.on('friendship_updated', (data) => {
-                    console.log('[UserStore] Friendship updated, refreshing list...', data);
-                    this.fetchFriends();
-                });
-            }
+            // Use NEW persistent listener system
+            socketService.on('friendship_updated', (data) => {
+                console.log('[UserStore] Friendship updated, refreshing list...', data);
+                this.fetchFriends();
+            });
 
             // Also listen for messages from the Service Worker
             if ('serviceWorker' in navigator) {

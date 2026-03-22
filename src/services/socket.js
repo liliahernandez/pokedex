@@ -1,6 +1,31 @@
 import { io } from 'socket.io-client';
 
 let socket;
+const internalListeners = new Map();
+
+/**
+ * Centrally manages socket listeners so they persist across reconnections
+ */
+export const on = (event, callback) => {
+    if (!internalListeners.has(event)) {
+        internalListeners.set(event, new Set());
+    }
+    internalListeners.get(event).add(callback);
+    
+    // If socket is already alive, attach it immediately
+    if (socket) {
+        socket.on(event, callback);
+    }
+};
+
+export const off = (event, callback) => {
+    if (internalListeners.has(event)) {
+        internalListeners.get(event).delete(callback);
+    }
+    if (socket) {
+        socket.off(event, callback);
+    }
+};
 
 export const initSocket = (token) => {
     if (socket) {
@@ -12,27 +37,31 @@ export const initSocket = (token) => {
         auth: {
             token: token
         },
-        transports: ['websocket'] // Force websocket to avoid polling CORS issues
+        transports: ['websocket']
     });
 
     socket.on('connect', () => {
-        console.log('Connected to socket server');
+        console.log('[Socket] Connected');
+        // Re-attach all registered listeners
+        internalListeners.forEach((callbacks, event) => {
+            callbacks.forEach(callback => {
+                socket.on(event, callback);
+            });
+        });
     });
 
     socket.on('disconnect', () => {
-        console.log('Disconnected from socket server');
+        console.log('[Socket] Disconnected');
     });
 
     socket.on('connect_error', (error) => {
-        console.error('Socket connection error:', error);
+        console.error('[Socket] Connection error:', error);
     });
 
     return socket;
 };
 
-export const getSocket = () => {
-    return socket;
-};
+export const getSocket = () => socket;
 
 export const disconnectSocket = () => {
     if (socket) {
