@@ -166,8 +166,11 @@ async function handleNotificationAction(action, data, notification) {
 }
 
 async function notifyClientsToRefresh() {
+    // Method 1: postMessage to all open windows via SW clients
     const windowClients = await clients.matchAll({ type: 'window' });
     for (const client of windowClients) {
         client.postMessage({ type: 'REFRESH_FRIENDS' });
     }
+    // Method 2: BroadcastChannel (reaches backgrounded app contexts too)
+    bc.postMessage({ type: 'REFRESH_FRIENDS' });
 }

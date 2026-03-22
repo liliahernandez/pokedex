@@ -69,6 +69,20 @@ export const useUserStore = defineStore('user', {
         async sendFriendRequest(friendCode) {
             try {
                 const response = await api.post('/auth/friends', { friendCode, action: 'send_request' });
+                
+                // Start a polling fallback for 30 seconds to ensure the UI updates if socket fails
+                let attempts = 0;
+                const pollInterval = setInterval(async () => {
+                    attempts++;
+                    const oldFriendsCount = this.friends.length;
+                    await this.fetchFriends();
+                    
+                    // If a friend was added, stop polling
+                    if (this.friends.length > oldFriendsCount || attempts >= 10) {
+                        clearInterval(pollInterval);
+                    }
+                }, 3000);
+
                 return response.data;
             } catch (error) {
                 throw error.response?.data?.error || 'Error al enviar solicitud de amistad';
@@ -148,14 +162,21 @@ export const useUserStore = defineStore('user', {
 
             // BroadcastChannel for cross-context sync (SW to App)
             const syncChannel = new BroadcastChannel('pokedex-sync');
-            syncChannel.onmessage = (event) => {
+            syncChannel.onmessage = async (event) => {
                 if (event.data && event.data.type === 'NOTIFICATION_ACTION') {
                     const { action, data } = event.data;
                     console.log(`[UserStore] Action received via BroadcastChannel: ${action}`);
                     
                     if (action === 'accept-friend' && data.requesterId) {
-                        this.acceptFriendRequest(data.requesterId);
+                        // Accept the request AND refresh this device's friends list right after
+                        await this.acceptFriendRequest(data.requesterId);
+                        await this.fetchFriends();
                     }
+                }
+                if (event.data && event.data.type === 'REFRESH_FRIENDS') {
+                    // SW accepted for us in background — just refresh this side
+                    console.log('[UserStore] SW accepted, refreshing friends...');
+                    await this.fetchFriends();
                 }
             };
 

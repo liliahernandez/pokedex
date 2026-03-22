@@ -15,6 +15,7 @@ const challengeSuccess = ref('');
 
 const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const socketStatus = ref('Desconectado');
+const successMessage = ref('');
 
 const handleVisibilityChange = () => {
     if (document.visibilityState === 'visible') {
@@ -28,6 +29,16 @@ onMounted(() => {
     userStore.fetchFriends();
     userStore.fetchPendingRequests();
     userStore.listenForFriendEvents();
+    
+    // Listen for real-time friend additions to show a message
+    const syncChannel = new BroadcastChannel('pokedex-sync');
+    syncChannel.onmessage = (event) => {
+        if (event.data?.type === 'NOTIFICATION_ACTION' && event.data.action === 'accept-friend') {
+            successMessage.value = '¡Amistad aceptada! Actualizando...';
+            setTimeout(() => successMessage.value = '', 3000);
+        }
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
 });
 
@@ -134,6 +145,10 @@ const resetPWA = async () => {
 
 <template>
     <div class="friends-container">
+        <div v-if="successMessage" class="success-toast">
+            {{ successMessage }}
+        </div>
+
         <div class="profile-section glass-panel">
             <h2>Perfil de {{ authStore.user?.name || authStore.user?.email.split('@')[0] }}</h2>
             <div class="code-display">
@@ -340,5 +355,24 @@ const resetPWA = async () => {
 .error {
     color: #ef4444;
     margin-top: 0.5rem;
+}
+.success-toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #4ade80;
+    color: #1a202c;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    z-index: 9999;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { transform: translate(-50%, -100%); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
 }
 </style>
