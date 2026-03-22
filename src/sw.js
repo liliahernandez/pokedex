@@ -32,7 +32,7 @@ async function saveApiUrl(url) {
     } catch (e) {}
 }
 
-let cachedApiUrl = 'https://pokedex-backend-production-494a.up.railway.app'; 
+let cachedApiUrl = 'https://be-production-c80c.up.railway.app'; 
 
 // Message listener for SKIP_WAITING and CONFIG
 self.addEventListener('message', (event) => {
