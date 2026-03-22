@@ -67,6 +67,42 @@ self.addEventListener('message', (event) => {
     }
 });
 
+// Web Push Event Handler (triggered when a push message arrives from the server)
+self.addEventListener('push', (event) => {
+    if (!event.data) return;
+
+    let payload;
+    try {
+        payload = event.data.json();
+    } catch (e) {
+        payload = { title: 'Pokédex', body: event.data.text() };
+    }
+
+    const title = payload.title || 'Pokédex';
+    const options = {
+        body: payload.body || '',
+        icon: '/icon.svg',
+        badge: '/icon.svg',
+        vibrate: [200, 100, 200],
+        tag: payload.data?.action || 'general',
+        renotify: true,
+        data: payload.data || {},
+        actions: []
+    };
+
+    // Add action buttons based on notification type
+    if (payload.data?.action === 'accept-friend') {
+        options.actions = [
+            { action: 'accept-friend', title: '✅ ACEPTAR' },
+            { action: 'reject-friend', title: '❌ RECHAZAR' }
+        ];
+    }
+
+    event.waitUntil(
+        self.registration.showNotification(title, options)
+    );
+});
+
 // Notification Click Handler
 self.addEventListener('notificationclick', (event) => {
     const notification = event.notification;

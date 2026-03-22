@@ -5,7 +5,8 @@ import FriendRequestNotification from './components/FriendRequestNotification.vu
 import NotificationPermissionPrompt from './components/NotificationPermissionPrompt.vue';
 import { useUserStore } from './stores/user';
 import { useAuthStore } from './stores/auth';
-import { watch, ref, onMounted } from 'vue'; // Added ref and onMounted
+import { watch, ref, onMounted } from 'vue';
+import { subscribeToPushNotifications } from './services/pushSubscription';
 
 const userStore = useUserStore();
 const authStore = useAuthStore();
@@ -13,6 +14,8 @@ const authStore = useAuthStore();
 watch(() => authStore.isAuthenticated, (val) => {
     if (val) {
         userStore.listenForFriendEvents();
+        // Subscribe to Web Push notifications after login
+        subscribeToPushNotifications().catch(e => console.warn('[Push] Could not subscribe:', e));
     }
 }, { immediate: true });
 
