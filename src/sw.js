@@ -1,6 +1,7 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 import { clientsClaim } from 'workbox-core';
-import { getAuthToken } from './services/offlineStorage';
+import { getAuthToken, initDB } from './services/offlineStorage';
+import { openDB } from 'idb';
 
 self.skipWaiting();
 clientsClaim();
@@ -9,22 +10,29 @@ clientsClaim();
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
+let dynamicApiUrl = 'https://pokedex-backend-production-494a.up.railway.app'; // Default fallback
+
+// Message listener for SKIP_WAITING and CONFIG
+self.addEventListener('message', (event) => {
+    if (event.data) {
+        if (event.data.type === 'SKIP_WAITING') {
+            self.skipWaiting();
+        }
+        if (event.data.type === 'SET_CONFIG') {
+            if (event.data.apiUrl) {
+                dynamicApiUrl = event.data.apiUrl;
+                console.log('[SW] API URL set to:', dynamicApiUrl);
+            }
+        }
+    }
+});
+
 // Notification Click Handler
 self.addEventListener('notificationclick', (event) => {
     const notification = event.notification;
     const action = event.action;
     const data = notification.data || {};
 
-    console.log(`[SW] Notification clicked: ${action}`, data);
-
-    if (!action) {
-        // Just clicking the notification itself (not a button)
-        event.waitUntil(focusOrOpenApp());
-        notification.close();
-        return;
-    }
-
-    // Handle Buttons
     event.waitUntil(handleNotificationAction(action, data, notification));
 });
 
@@ -44,12 +52,21 @@ async function focusOrOpenApp() {
 }
 
 async function handleNotificationAction(action, data, notification) {
+    if (!action) {
+        await focusOrOpenApp();
+        notification.close();
+        return;
+    }
+
     const token = await getAuthToken();
-    const API_URL = 'https://pokedex-backend-production-494a.up.railway.app'; // Production URL fallback
+    // Use dynamic URL, ensuring no trailing slash and cleaning it up
+    const cleanBaseUrl = dynamicApiUrl.replace(/\/+$/, '');
 
     try {
         if (action === 'accept-friend' && data.requesterId) {
-            await fetch(`${API_URL}/api/auth/friends`, {
+            // Try both routes (/auth and /api/auth) if needed, but the alias fix in BE handles both.
+            // We use /auth as primary.
+            const response = await fetch(`${cleanBaseUrl}/auth/friends`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -58,28 +75,30 @@ async function handleNotificationAction(action, data, notification) {
                 body: JSON.stringify({ friendId: data.requesterId, action: 'accept_request' })
             });
             
+            if (!response.ok) throw new Error(`API status: ${response.status}`);
+
             self.registration.showNotification('¡Amistad Aceptada! 🤝', {
                 body: 'Ahora son amigos. ¡Genial!',
                 icon: '/icon.svg'
             });
 
-            // Notify open tabs to refresh
             await notifyClientsToRefresh();
         }
         
-        if (action === 'reject-friend' && data.requesterId) {
-            // Optional: Call delete or just dismiss
+        if (action === 'reject-friend') {
             notification.close();
         }
 
         if (action === 'accept-battle') {
-            // Focus app to start battle
             await focusOrOpenApp();
         }
 
     } catch (error) {
         console.error('[SW] Action failed', error);
-        // Fallback: open app
+        self.registration.showNotification('Error 🤔', {
+            body: `No se pudo procesar: ${error.message}. Abre la app.`,
+            icon: '/icon.svg'
+        });
         await focusOrOpenApp();
     } finally {
         notification.close();
