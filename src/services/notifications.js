@@ -35,7 +35,10 @@ class NotificationService {
             icon: '/icon.svg',
             badge: '/icon.svg',
             vibrate: [200, 100, 200],
-            silent: false
+            silent: false,
+            // Allow actions (buttons) and data (metadata for SW)
+            actions: options.actions || [],
+            data: options.data || {}
         };
 
         const mergedOptions = { ...defaultOptions, ...options };

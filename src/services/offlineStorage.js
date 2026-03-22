@@ -2,6 +2,7 @@ import { openDB } from 'idb';
 
 const DB_NAME = 'offline-store';
 const STORE_NAME = 'requests';
+const AUTH_STORE = 'auth';
 
 export const initDB = async () => {
     return openDB(DB_NAME, 1, {
@@ -9,8 +10,21 @@ export const initDB = async () => {
             if (!db.objectStoreNames.contains(STORE_NAME)) {
                 db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
             }
+            if (!db.objectStoreNames.contains(AUTH_STORE)) {
+                db.createObjectStore(AUTH_STORE);
+            }
         },
     });
+};
+
+export const saveAuthToken = async (token) => {
+    const db = await initDB();
+    return db.put(AUTH_STORE, token, 'token');
+};
+
+export const getAuthToken = async () => {
+    const db = await initDB();
+    return db.get(AUTH_STORE, 'token');
 };
 
 export const saveRequest = async (request) => {

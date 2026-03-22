@@ -12,17 +12,15 @@ export default defineConfig({
     vue(),
     vueDevTools(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       devOptions: {
         enabled: true,
+        type: 'module'
       },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        skipWaiting: true,
-        clientsClaim: true
-      },
-      includeAssets: ['favicon.ico', 'icon.svg'],
       manifest: {
         name: 'Pokedex App',
         short_name: 'Pokedex',

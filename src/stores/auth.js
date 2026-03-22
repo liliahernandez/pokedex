@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import api from '../services/api';
 import { initSocket, disconnectSocket } from '../services/socket';
 import { notificationService } from '../services/notifications';
+import { saveAuthToken } from '../services/offlineStorage';
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
@@ -33,6 +34,7 @@ export const useAuthStore = defineStore('auth', {
             this.user = data.user;
             this.isAuthenticated = true;
             sessionStorage.setItem('token', data.token);
+            saveAuthToken(data.token); // Save for SW access
             
             // Connect to real-time events immediately
             initSocket(data.token);
