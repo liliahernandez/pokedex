@@ -21,7 +21,11 @@ const setupSocketListener = () => {
         registeredSocket = socket;
         socket.on('friend_request', (data) => {
             requestData.value = data;
-            showing.value = true;
+
+            // Only show internal box if native is not allowed
+            if (Notification.permission !== 'granted') {
+                showing.value = true;
+            }
 
             // Show native notification
             notificationService.show('¡Solicitud de Amistad! 🤝', {

@@ -36,9 +36,6 @@ export const useAuthStore = defineStore('auth', {
             
             // Connect to real-time events immediately
             initSocket(data.token);
-            
-            // Ask for notification permission (premium feature)
-            notificationService.requestPermission();
         },
         logout() {
             this.token = null;

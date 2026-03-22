@@ -20,7 +20,11 @@ const setupSocketListener = () => {
         registeredSocket = socket;
         socket.on('battle_request', (data) => {
             challengeData.value = data;
-            showing.value = true;
+            
+            // Only show internal box if native is not allowed
+            if (Notification.permission !== 'granted') {
+                showing.value = true;
+            }
             
             // Show native notification
             notificationService.show('¡Desafío de Batalla! ⚔️', {
