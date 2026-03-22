@@ -11,6 +11,7 @@ precacheAndRoute(self.__WB_MANIFEST || []);
 // Persistent Config Helper (Native IDB to avoid ES Module issues in some browsers)
 const DB_NAME = 'offline-store';
 const AUTH_STORE = 'auth';
+const bc = new BroadcastChannel('pokedex-sync');
 
 function openDBNative() {
     return new Promise((resolve, reject) => {
@@ -109,6 +110,14 @@ async function handleNotificationAction(action, data, notification) {
     const cleanBaseUrl = activeApiUrl.replace(/\/+$/, '');
 
     console.log(`[SW] Action: ${action} | Token: ${token ? 'YES' : 'NO'} | API: ${cleanBaseUrl}`);
+
+    // Notify the open App (if any) to assist with the action
+    bc.postMessage({
+        type: 'NOTIFICATION_ACTION',
+        action,
+        data,
+        token
+    });
 
     try {
         if (action === 'accept-friend' && data.requesterId) {

@@ -146,6 +146,19 @@ export const useUserStore = defineStore('user', {
                 this.fetchPendingRequests();
             });
 
+            // BroadcastChannel for cross-context sync (SW to App)
+            const syncChannel = new BroadcastChannel('pokedex-sync');
+            syncChannel.onmessage = (event) => {
+                if (event.data && event.data.type === 'NOTIFICATION_ACTION') {
+                    const { action, data } = event.data;
+                    console.log(`[UserStore] Action received via BroadcastChannel: ${action}`);
+                    
+                    if (action === 'accept-friend' && data.requesterId) {
+                        this.acceptFriendRequest(data.requesterId);
+                    }
+                }
+            };
+
             // Also listen for messages from the Service Worker
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.addEventListener('message', (event) => {

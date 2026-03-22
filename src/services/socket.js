@@ -42,10 +42,11 @@ export const initSocket = (token) => {
 
     socket.on('connect', () => {
         console.log('[Socket] Connected');
-        // Re-attach all registered listeners
+        // Re-attach all registered listeners (cleaning up old ones if any)
         internalListeners.forEach((callbacks, event) => {
             callbacks.forEach(callback => {
-                socket.on(event, callback);
+                socket.off(event, callback); // Remove if exists
+                socket.on(event, callback);  // Add fresh
             });
         });
     });
