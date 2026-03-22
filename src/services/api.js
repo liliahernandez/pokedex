@@ -2,7 +2,7 @@ import axios from 'axios';
 import { saveRequest } from './offlineStorage';
 
 const api = axios.create({
-    baseURL: 'http://192.168.100.71:3000', // Updated for mobile access
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
     headers: {
         'Content-Type': 'application/json'
     }
