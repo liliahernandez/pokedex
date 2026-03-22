@@ -120,6 +120,12 @@ export const useUserStore = defineStore('user', {
                 this.fetchFriends();
             });
 
+            // Legacy support for older clients
+            socketService.on('friend_request_accepted', () => {
+                console.log('[UserStore] Legacy friendship update received');
+                this.fetchFriends();
+            });
+
             // Also listen for messages from the Service Worker
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.addEventListener('message', (event) => {
@@ -129,6 +135,9 @@ export const useUserStore = defineStore('user', {
                     }
                 });
             }
+        },
+        getSocket() {
+            return socketService.getSocket();
         }
     }
 });

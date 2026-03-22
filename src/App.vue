@@ -57,8 +57,11 @@ onMounted(async () => {
 
         // Sync API URL to Service Worker
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        console.log('[DEBUG] App API URL:', apiUrl);
+        
         navigator.serviceWorker.ready.then(registration => {
             if (registration.active) {
+                console.log('[DEBUG] Syncing URL to SW:', apiUrl);
                 registration.active.postMessage({ 
                     type: 'SET_CONFIG', 
                     apiUrl: apiUrl

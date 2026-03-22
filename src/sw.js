@@ -1,6 +1,5 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 import { clientsClaim } from 'workbox-core';
-import { getAuthToken, initDB } from './services/offlineStorage';
 import { openDB } from 'idb';
 
 self.skipWaiting();
@@ -10,7 +9,30 @@ clientsClaim();
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
-let dynamicApiUrl = 'https://pokedex-backend-production-494a.up.railway.app'; // Default fallback
+// Persistent Config Helper
+const DB_NAME = 'offline-store';
+const AUTH_STORE = 'auth';
+
+async function getStoredConfig() {
+    try {
+        const db = await openDB(DB_NAME, 1);
+        const token = await db.get(AUTH_STORE, 'token');
+        const apiUrl = await db.get(AUTH_STORE, 'apiUrl');
+        return { token, apiUrl };
+    } catch (e) {
+        console.error('[SW] Config retrieval failed', e);
+        return {};
+    }
+}
+
+async function saveApiUrl(url) {
+    try {
+        const db = await openDB(DB_NAME, 1);
+        await db.put(AUTH_STORE, url, 'apiUrl');
+    } catch (e) {}
+}
+
+let cachedApiUrl = 'https://pokedex-backend-production-494a.up.railway.app'; 
 
 // Message listener for SKIP_WAITING and CONFIG
 self.addEventListener('message', (event) => {
@@ -18,11 +40,10 @@ self.addEventListener('message', (event) => {
         if (event.data.type === 'SKIP_WAITING') {
             self.skipWaiting();
         }
-        if (event.data.type === 'SET_CONFIG') {
-            if (event.data.apiUrl) {
-                dynamicApiUrl = event.data.apiUrl;
-                console.log('[SW] API URL set to:', dynamicApiUrl);
-            }
+        if (event.data.type === 'SET_CONFIG' && event.data.apiUrl) {
+            cachedApiUrl = event.data.apiUrl;
+            saveApiUrl(event.data.apiUrl);
+            console.log('[SW] API URL updated and stored:', cachedApiUrl);
         }
     }
 });
@@ -58,14 +79,16 @@ async function handleNotificationAction(action, data, notification) {
         return;
     }
 
-    const token = await getAuthToken();
-    // Use dynamic URL, ensuring no trailing slash and cleaning it up
-    const cleanBaseUrl = dynamicApiUrl.replace(/\/+$/, '');
+    const { token, apiUrl } = await getStoredConfig();
+    const activeApiUrl = apiUrl || cachedApiUrl;
+    const cleanBaseUrl = activeApiUrl.replace(/\/+$/, '');
+
+    console.log(`[SW] Handling action: ${action} with API: ${cleanBaseUrl}`);
 
     try {
         if (action === 'accept-friend' && data.requesterId) {
-            // Try both routes (/auth and /api/auth) if needed, but the alias fix in BE handles both.
-            // We use /auth as primary.
+            if (!token) throw new Error('No hay sesión activa. Abre la app.');
+
             const response = await fetch(`${cleanBaseUrl}/auth/friends`, {
                 method: 'POST',
                 headers: {
@@ -75,7 +98,10 @@ async function handleNotificationAction(action, data, notification) {
                 body: JSON.stringify({ friendId: data.requesterId, action: 'accept_request' })
             });
             
-            if (!response.ok) throw new Error(`API status: ${response.status}`);
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.error || `Error ${response.status}`);
+            }
 
             self.registration.showNotification('¡Amistad Aceptada! 🤝', {
                 body: 'Ahora son amigos. ¡Genial!',
@@ -94,9 +120,9 @@ async function handleNotificationAction(action, data, notification) {
         }
 
     } catch (error) {
-        console.error('[SW] Action failed', error);
+        console.error('[SW] Action failed:', error);
         self.registration.showNotification('Error 🤔', {
-            body: `No se pudo procesar: ${error.message}. Abre la app.`,
+            body: `${error.message}`,
             icon: '/icon.svg'
         });
         await focusOrOpenApp();

@@ -13,9 +13,21 @@ const selectedFriendId = ref(null); // Used if challenging from list
 const selectedTeamId = ref('');
 const challengeSuccess = ref('');
 
+const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const socketStatus = ref('Desconectado');
+
 onMounted(() => {
     userStore.fetchFriends();
     userStore.fetchTeams();
+    
+    // Check socket
+    const interval = setInterval(() => {
+        const socket = userStore.getSocket?.() || null;
+        if (socket?.connected) {
+            socketStatus.value = 'Conectado ✅';
+            clearInterval(interval);
+        }
+    }, 1000);
 });
 
 const sendFriendRequest = async () => {
@@ -146,6 +158,12 @@ const copyCode = () => {
                     </div>
                 </div>
             </div>
+        </div>
+        <!-- Debug Info (for development) -->
+        <div class="debug-panel glass-panel" style="margin-top: 2rem; font-size: 0.7rem; opacity: 0.5;">
+            <p>Backend: {{ apiUrl }}</p>
+            <p>Socket: {{ socketStatus }}</p>
+            <p>Usuario: {{ authStore.user?.email }}</p>
         </div>
     </div>
 </template>
