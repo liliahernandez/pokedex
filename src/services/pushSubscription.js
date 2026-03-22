@@ -53,12 +53,15 @@ export async function subscribeToPushNotifications() {
             applicationServerKey: convertedKey
         });
 
+        const rawSub = subscription.toJSON();
+        console.log('[Push] Subscription object:', rawSub);
+
         // Send subscription to our backend
         await api.post('/push/subscribe', {
             endpoint: subscription.endpoint,
             keys: {
-                p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')))),
-                auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth'))))
+                p256dh: rawSub.keys.p256dh,
+                auth: rawSub.keys.auth
             }
         });
 
