@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import api from '../services/api';
+import { getSocket } from '../services/socket';
 
 export const useUserStore = defineStore('user', {
     state: () => ({
@@ -84,7 +85,7 @@ export const useUserStore = defineStore('user', {
         async deleteTeam(teamId) {
             try {
                 await api.delete(`/favorites/teams/${teamId}`);
-                this.teams = this.teams.filter(t => t.id !== teamId); // Ensure using correct ID field if Sequelize uses id vs _id
+                this.teams = this.teams.filter(t => t.id !== teamId);
             } catch (error) {
                 console.error('Error deleting team', error);
                 throw error;
@@ -93,12 +94,11 @@ export const useUserStore = defineStore('user', {
         async updateTeam(teamId, name, pokemonIds) {
             try {
                 const response = await api.put(`/favorites/teams/${teamId}`, { name, pokemonIds });
-                // Update local state
                 const index = this.teams.findIndex(t => t.id === teamId);
                 if (index !== -1) {
                     this.teams[index] = response.data.team;
                 } else {
-                    this.fetchTeams(); // Fallback
+                    this.fetchTeams();
                 }
             } catch (error) {
                 console.error('Error updating team', error);
@@ -111,6 +111,26 @@ export const useUserStore = defineStore('user', {
                 return response.data;
             } catch (error) {
                 throw error.response?.data?.error || 'Error al crear la batalla';
+            }
+        },
+        listenForFriendEvents() {
+            const socket = getSocket();
+            if (socket) {
+                // Listen for multi-user sync events
+                socket.on('friendship_updated', (data) => {
+                    console.log('[UserStore] Friendship updated, refreshing list...', data);
+                    this.fetchFriends();
+                });
+            }
+
+            // Also listen for messages from the Service Worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.addEventListener('message', (event) => {
+                    if (event.data && event.data.type === 'REFRESH_FRIENDS') {
+                        console.log('[UserStore] Refresh requested by Service Worker');
+                        this.fetchFriends();
+                    }
+                });
             }
         }
     }

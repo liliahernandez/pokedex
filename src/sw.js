@@ -62,6 +62,9 @@ async function handleNotificationAction(action, data, notification) {
                 body: 'Ahora son amigos. ¡Genial!',
                 icon: '/icon.svg'
             });
+
+            // Notify open tabs to refresh
+            await notifyClientsToRefresh();
         }
         
         if (action === 'reject-friend' && data.requesterId) {
@@ -80,5 +83,12 @@ async function handleNotificationAction(action, data, notification) {
         await focusOrOpenApp();
     } finally {
         notification.close();
+    }
+}
+
+async function notifyClientsToRefresh() {
+    const windowClients = await clients.matchAll({ type: 'window' });
+    for (const client of windowClients) {
+        client.postMessage({ type: 'REFRESH_FRIENDS' });
     }
 }
