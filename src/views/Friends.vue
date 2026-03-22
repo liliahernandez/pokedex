@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { useUserStore } from '../stores/user';
 import { useAuthStore } from '../stores/auth';
 

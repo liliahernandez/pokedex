@@ -9,18 +9,6 @@ import { watch, ref, onMounted } from 'vue'; // Added ref and onMounted
 
 const userStore = useUserStore();
 const authStore = useAuthStore();
-const pwaUpdateAvailable = ref(false);
-
-// Function to handle PWA update
-const updateApp = () => {
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        // This message will trigger the service worker to skip waiting
-        navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
-        // Reload the page after the service worker has updated
-        window.location.reload();
-    }
-};
-
 // Start global listeners when authenticated
 watch(() => authStore.isAuthenticated, (val) => {
     if (val) {
@@ -34,13 +22,14 @@ onMounted(async () => {
     await authStore.initAuth();
 
     if ('serviceWorker' in navigator) {
-        // Detect update available
+        // Automatically skip waiting for new versions
         navigator.serviceWorker.ready.then(registration => {
             registration.addEventListener('updatefound', () => {
                 const newWorker = registration.installing;
                 newWorker.addEventListener('statechange', () => {
                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        pwaUpdateAvailable.value = true;
+                        // Automate skipwaiting
+                        newWorker.postMessage({ type: 'SKIP_WAITING' });
                     }
                 });
             });
@@ -73,10 +62,6 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-if="pwaUpdateAvailable" class="update-banner">
-    🚀 ¡Nueva versión disponible! 
-    <button @click="updateApp">ACTUALIZAR AHORA</button>
-  </div>
   <NavBar />
   <BattleNotification />
   <FriendRequestNotification />
@@ -85,36 +70,4 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.update-banner {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: #4ade80; /* Success Green */
-    color: #1a202c;
-    padding: 1rem;
-    text-align: center;
-    z-index: 10000;
-    font-weight: bold;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-}
-
-.update-banner button {
-    background: #1a202c;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: transform 0.2s;
-}
-
-.update-banner button:hover {
-    transform: scale(1.05);
-}
 </style>
