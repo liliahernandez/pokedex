@@ -11,7 +11,8 @@ export const initSocket = (token) => {
     socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000', {
         auth: {
             token: token
-        }
+        },
+        transports: ['websocket'] // Force websocket to avoid polling CORS issues
     });
 
     socket.on('connect', () => {
