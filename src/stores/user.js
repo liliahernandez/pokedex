@@ -2,6 +2,11 @@ import { defineStore } from 'pinia';
 import api from '../services/api';
 import * as socketService from '../services/socket';
 
+// Module-level BroadcastChannel — stays alive forever, not GC'd
+const syncChannel = typeof BroadcastChannel !== 'undefined'
+    ? new BroadcastChannel('pokedex-sync')
+    : null;
+
 export const useUserStore = defineStore('user', {
     state: () => ({
         favorites: [],
@@ -161,32 +166,31 @@ export const useUserStore = defineStore('user', {
             });
 
             // BroadcastChannel for cross-context sync (SW to App)
-            const syncChannel = new BroadcastChannel('pokedex-sync');
-            syncChannel.onmessage = async (event) => {
-                const msg = event.data;
-                if (!msg) return;
+            if (syncChannel) {
+                syncChannel.onmessage = async (event) => {
+                    const msg = event.data;
+                    if (!msg) return;
+                    const store = this;
 
-                if (msg.type === 'ACCEPT_FRIEND_REQUEST' && msg.requesterId) {
-                    // The SW told us to accept — we do it with our valid in-memory token
-                    console.log('[UserStore] Accepting friend request from BroadcastChannel, requesterId:', msg.requesterId);
-                    await this.acceptFriendRequest(msg.requesterId);
-                    await this.fetchFriends();
-                }
-
-                if (msg.type === 'NOTIFICATION_ACTION') {
-                    // Legacy: handle old format
-                    if (msg.action === 'accept-friend' && msg.data?.requesterId) {
-                        await this.acceptFriendRequest(msg.data.requesterId);
-                        await this.fetchFriends();
+                    if (msg.type === 'ACCEPT_FRIEND_REQUEST' && msg.requesterId) {
+                        console.log('[UserStore] BC: Accepting friend request, requesterId:', msg.requesterId);
+                        await store.acceptFriendRequest(msg.requesterId);
+                        await store.fetchFriends();
                     }
-                }
 
-                if (msg.type === 'REFRESH_FRIENDS') {
-                    // SW accepted in background — just refresh our list
-                    console.log('[UserStore] SW REFRESH_FRIENDS received, refreshing...');
-                    await this.fetchFriends();
-                }
-            };
+                    if (msg.type === 'NOTIFICATION_ACTION' && msg.action === 'accept-friend' && msg.data?.requesterId) {
+                        console.log('[UserStore] BC: Legacy accept, requesterId:', msg.data.requesterId);
+                        await store.acceptFriendRequest(msg.data.requesterId);
+                        await store.fetchFriends();
+                    }
+
+                    if (msg.type === 'REFRESH_FRIENDS') {
+                        console.log('[UserStore] BC: Refresh requested by SW');
+                        await store.fetchFriends();
+                    }
+                };
+                console.log('[UserStore] BroadcastChannel listener attached');
+            }
 
             // Also listen for messages from the Service Worker
             if ('serviceWorker' in navigator) {
