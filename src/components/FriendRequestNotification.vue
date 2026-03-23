@@ -4,20 +4,9 @@ import * as socketService from '../services/socket';
 import { notificationService } from '../services/notifications';
 
 const handleFriendRequest = (data) => {
-    // ONLY native notification as requested
-    notificationService.show('Solicitud de Amistad 🤝', {
-        body: `${data.requesterName || data.requesterEmail} quiere ser tu amigo.`,
-        tag: 'friend-request',
-        renotify: true,
-        vibrate: [200, 100, 200],
-        actions: [
-            { action: 'accept-friend', title: 'ACEPTAR' },
-            { action: 'reject-friend', title: 'RECHAZAR' }
-        ],
-        data: {
-            requesterId: data.requesterId
-        }
-    });
+    // Removed native notification here because the backend already sends a 
+    // Web Push notification (sw.js), which was causing duplicate native notifications.
+    console.log('[Socket] Friend request received:', data);
 };
 
 onMounted(() => {

@@ -4,21 +4,9 @@ import * as socketService from '../services/socket';
 import { notificationService } from '../services/notifications';
 
 const handleBattleRequest = (data) => {
-    // ONLY native notification as requested
-    notificationService.show('Desafío de Batalla ⚔️', {
-        body: `${data.challengerName || data.challengerEmail} te ha desafiado.`,
-        tag: 'battle-request',
-        renotify: true,
-        vibrate: [200, 100, 200, 100, 200],
-        actions: [
-            { action: 'accept-battle', title: 'ACEPTAR' },
-            { action: 'reject-battle', title: 'RECHAZAR' }
-        ],
-        data: {
-            battleId: data.battleId,
-            challengerId: data.challengerId
-        }
-    });
+    // Removed native notification here because the backend already sends a 
+    // Web Push notification (sw.js), which was causing duplicate native notifications.
+    console.log('[Socket] Battle request received:', data);
 };
 
 onMounted(() => {
