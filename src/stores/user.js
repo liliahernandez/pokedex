@@ -194,10 +194,18 @@ export const useUserStore = defineStore('user', {
 
             // Also listen for messages from the Service Worker
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.addEventListener('message', (event) => {
-                    if (event.data && event.data.type === 'REFRESH_FRIENDS') {
+                navigator.serviceWorker.addEventListener('message', async (event) => {
+                    if (!event.data) return;
+                    
+                    if (event.data.type === 'REFRESH_FRIENDS') {
                         console.log('[UserStore] Refresh requested by Service Worker');
                         this.fetchFriends();
+                    }
+                    
+                    if (event.data.type === 'ACCEPT_FRIEND_REQUEST' && event.data.requesterId) {
+                        console.log('[UserStore] SW: Accepting friend request, requesterId:', event.data.requesterId);
+                        await this.acceptFriendRequest(event.data.requesterId);
+                        await this.fetchFriends();
                     }
                 });
             }

@@ -98,6 +98,13 @@ self.addEventListener('push', (event) => {
         ];
     }
 
+    if (payload.data?.action === 'accept-battle') {
+        options.actions = [
+            { action: 'accept-battle', title: '⚔️ IR A BATALLA' }
+        ];
+        options.tag = `battle-${payload.data.battleId}`;
+    }
+
     event.waitUntil(
         self.registration.showNotification(title, options)
     );
@@ -138,57 +145,36 @@ async function handleNotificationAction(action, data) {
     console.log(`[SW] Notification action: ${action}`, data);
 
     if (action === 'accept-friend' && data.requesterId) {
-        // STRATEGY: Tell the open App to accept using its own valid session.
-        // The SW broadcasts to the app, and the app (which has the token in memory) does the API call.
-        bc.postMessage({
-            type: 'ACCEPT_FRIEND_REQUEST',
-            requesterId: data.requesterId
-        });
-
-        // Also try to accept from SW background as a parallel attempt with DB token
+        // Save the pending accept to localStorage — the app reads this on load after auth
+        // This is the most reliable approach: no timing issues, works even when app was closed
         try {
-            const token = await getFromDB(AUTH_STORE, 'token').catch(() => null);
-            const apiUrlFromDB = await getFromDB(AUTH_STORE, 'apiUrl').catch(() => null);
-            const cleanBaseUrl = (apiUrlFromDB || cachedApiUrl).replace(/\/+$/, '');
-
-            console.log(`[SW] Background accept attempt | Token: ${token ? 'YES' : 'NO'}`);
-
-            if (token) {
-                const response = await fetch(`${cleanBaseUrl}/auth/friends`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ friendId: data.requesterId, action: 'accept_request' })
-                });
-
-                if (response.ok) {
-                    console.log('[SW] Background accept succeeded!');
-                    // Notify all clients to refresh
-                    bc.postMessage({ type: 'REFRESH_FRIENDS' });
-                    const windowClients = await clients.matchAll({ type: 'window' });
-                    for (const client of windowClients) {
-                        client.postMessage({ type: 'REFRESH_FRIENDS' });
-                    }
-                    self.registration.showNotification('¡Amistad Aceptada! 🤝', {
-                        body: 'Ahora son amigos. ¡Genial!',
-                        icon: '/icon.svg'
+            // Use clients API to set localStorage in any open window
+            const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+            
+            if (windowClients.length > 0) {
+                // App is open — send it a message directly
+                for (const client of windowClients) {
+                    client.postMessage({
+                        type: 'ACCEPT_FRIEND_REQUEST',
+                        requesterId: data.requesterId
                     });
-                    return;
                 }
+                // Also focus the app
+                await windowClients[0].focus();
+            } else {
+                // App is closed — open with URL param as backup signal
+                const acceptUrl = new URL('/', self.location.origin);
+                acceptUrl.searchParams.set('accept-friend', data.requesterId);
+                await clients.openWindow(acceptUrl.href);
             }
         } catch (e) {
-            console.warn('[SW] Background accept failed, app will handle:', e.message);
+            console.error('[SW] Error handling accept-friend:', e);
+            await openOrFocusApp();
         }
-
-        // Open the app so it can accept using its in-memory token
-        await openOrFocusApp();
         return;
     }
 
     if (action === 'reject-friend') {
-        // Just close, already done
         return;
     }
 

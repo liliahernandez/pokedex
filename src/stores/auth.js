@@ -25,6 +25,22 @@ export const useAuthStore = defineStore('auth', {
                 this.isAuthenticated = true;
                 // Verify with server
                 await this.fetchProfile();
+
+                // 3. Process any pending friend accept from notification tap
+                const pendingAccept = localStorage.getItem('pending-accept-friend');
+                if (pendingAccept) {
+                    localStorage.removeItem('pending-accept-friend');
+                    console.log('[Auth] Processing pending friend accept:', pendingAccept);
+                    try {
+                        const { useUserStore } = await import('./user');
+                        const userStore = useUserStore();
+                        await userStore.acceptFriendRequest(pendingAccept);
+                        await userStore.fetchFriends();
+                        console.log('[Auth] Pending friend accept processed!');
+                    } catch (e) {
+                        console.error('[Auth] Error processing pending accept:', e);
+                    }
+                }
             }
         },
         async register(email, password, name, nickname) {

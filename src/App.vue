@@ -24,6 +24,22 @@ onMounted(async () => {
     // Restore authentication from storage (critical for PWA)
     await authStore.initAuth();
 
+    // Handle notification actions passed via URL params (e.g., accept-friend from SW)
+    const urlParams = new URLSearchParams(window.location.search);
+    const acceptFriendId = urlParams.get('accept-friend');
+    if (acceptFriendId && authStore.isAuthenticated) {
+        console.log('[App] Auto-accepting friend request from URL param:', acceptFriendId);
+        try {
+            await userStore.acceptFriendRequest(acceptFriendId);
+            await userStore.fetchFriends();
+            console.log('[App] Friend request accepted successfully!');
+        } catch (e) {
+            console.error('[App] Error accepting friend request:', e);
+        }
+        // Clean the URL so it doesn't re-trigger on refresh
+        window.history.replaceState({}, '', '/');
+    }
+
     if ('serviceWorker' in navigator) {
         // Automatically skip waiting for new versions
         navigator.serviceWorker.ready.then(registration => {
