@@ -116,4 +116,18 @@ const navigateTo = (path) => {
 .action-card p {
     color: #cbd5e0;
 }
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+    .welcome-section h1 {
+        font-size: 2rem;
+    }
+    .dashboard-container {
+        padding: 1rem;
+        gap: 2rem;
+    }
+    .welcome-section {
+        padding: 2rem 1rem;
+    }
+}
 </style>

@@ -254,4 +254,29 @@ input[type=number] {
     width: 30px;
     height: 30px;
 }
+
+/* Mobile Responsive */
+.teams-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .teams-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    .modal {
+        width: 90%;
+        padding: 1.5rem;
+    }
+}
 </style>

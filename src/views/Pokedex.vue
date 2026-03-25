@@ -196,4 +196,18 @@ const loadMore = () => {
     color: #ff4d4d;
     font-size: 1.2rem;
 }
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+    .filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .search-input, .filter-select {
+        width: 100%;
+    }
+    .home-container {
+        padding: 1rem;
+    }
+}
 </style>

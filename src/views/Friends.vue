@@ -375,4 +375,24 @@ const resetPWA = async () => {
     from { transform: translate(-50%, -100%); opacity: 0; }
     to { transform: translate(-50%, 0); opacity: 1; }
 }
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+    .input-group {
+        flex-direction: column;
+    }
+    .friend-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .friend-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+    .code-display {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
 </style>

@@ -59,7 +59,7 @@ const closeMenu = () => {
   padding: 1rem 2rem;
   margin-bottom: 2rem;
   position: sticky;
-  top: 20px;
+  top: calc(10px + env(safe-area-inset-top));
   z-index: 1000;
   border-radius: var(--radius-lg);
 }
