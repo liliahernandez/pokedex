@@ -69,14 +69,14 @@ const selectMove = (moveName) => {
 const myHpPercent = computed(() => {
     const p = battleStore.activeMyPokemon;
     if (!p) return 0;
-    const max = p.stats.hp || 100;
+    const max = p.stats?.hp || 100;
     return Math.max(0, Math.min(100, (p.currentHp / max) * 100));
 });
 
 const opHpPercent = computed(() => {
     const p = battleStore.activeOpponentPokemon;
     if (!p) return 0;
-    const max = p.stats.hp || 100;
+    const max = p.stats?.hp || 100;
     return Math.max(0, Math.min(100, (p.currentHp / max) * 100));
 });
 
@@ -127,7 +127,7 @@ const hpColor = (pct) => {
                         <div class="hp-bar" :style="{ width: myHpPercent + '%', backgroundColor: hpColor(myHpPercent) }"></div>
                     </div>
                     <div class="hp-numbers">
-                        {{ Math.max(0, battleStore.activeMyPokemon.currentHp) }} / {{ battleStore.activeMyPokemon.stats.hp || 100 }}
+                        {{ Math.max(0, battleStore.activeMyPokemon.currentHp) }} / {{ battleStore.activeMyPokemon.stats?.hp || 100 }}
                     </div>
                 </div>
             </div>
