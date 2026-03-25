@@ -224,12 +224,26 @@ const goToDetails = (id) => {
 /* Mobile Responsive */
 @media (max-width: 600px) {
     .filter-row {
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: nowrap;
+        gap: 0.5rem;
     }
-    .search-input, .filter-select {
-        width: 100%;
+    
+    .top-row .search-input {
+        width: auto;
+        flex: 1.5;
     }
+    .top-row .filter-select {
+        width: auto;
+        flex: 1;
+    }
+
+    .bottom-row .filter-select {
+        padding: 8px 4px;
+        font-size: 0.8rem;
+    }
+
     .home-container {
         padding: 1rem;
     }
