@@ -47,9 +47,11 @@ export const useUserStore = defineStore('user', {
                 console.error('Error fetching teams', error);
             }
         },
-        async createTeam(name, pokemonIds) {
+        async createTeam(name, pokemonData) {
             try {
-                await api.post('/favorites/teams', { name, pokemonIds });
+                const isArrayOfIds = pokemonData.length > 0 && typeof pokemonData[0] !== 'object';
+                const payload = isArrayOfIds ? { name, pokemonIds: pokemonData } : { name, pokemon: pokemonData };
+                await api.post('/favorites/teams', payload);
                 this.fetchTeams();
             } catch (error) {
                 throw error;
@@ -119,9 +121,11 @@ export const useUserStore = defineStore('user', {
                 throw error;
             }
         },
-        async updateTeam(teamId, name, pokemonIds) {
+        async updateTeam(teamId, name, pokemonData) {
             try {
-                const response = await api.put(`/favorites/teams/${teamId}`, { name, pokemonIds });
+                const isArrayOfIds = pokemonData.length > 0 && typeof pokemonData[0] !== 'object';
+                const payload = isArrayOfIds ? { name, pokemonIds: pokemonData } : { name, pokemon: pokemonData };
+                const response = await api.put(`/favorites/teams/${teamId}`, payload);
                 const index = this.teams.findIndex(t => t.id === teamId);
                 if (index !== -1) {
                     this.teams[index] = response.data.team;
