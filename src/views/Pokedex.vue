@@ -95,7 +95,7 @@ const goToDetails = (id) => {
                     class="search-input"
                 />
                 <select v-model="selectedRegion" @change="handleGenFilter" class="filter-select">
-                    <option value="">Todas las Regiones</option>
+                    <option value="">Regiones</option>
                     <option v-for="gen in pokemonStore.generations" :key="'reg-'+gen.name" :value="gen.name">
                         {{ regionTranslations[gen.name] || gen.name.toUpperCase() }}
                     </option>
@@ -103,7 +103,7 @@ const goToDetails = (id) => {
             </div>
             <div class="filter-row bottom-row">
                 <select v-model="selectedGeneration" @change="handleGenFilter" class="filter-select">
-                    <option value="">Todas las Generaciones</option>
+                    <option value="">Generaciones</option>
                     <option v-for="(gen, index) in pokemonStore.generations" :key="'gen-'+gen.name" :value="gen.name">
                         Generación {{ index + 1 }}
                     </option>
