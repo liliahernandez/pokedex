@@ -8,8 +8,10 @@ const pokemonStore = usePokemonStore();
 const router = useRouter();
 
 const searchQuery = ref('');
-const selectedType = ref('');
+const selectedRegion = ref('');
 const selectedGeneration = ref('');
+const selectedType1 = ref('');
+const selectedType2 = ref('');
 
 const regionTranslations = {
   'generation-i': 'Kanto',
@@ -24,23 +26,10 @@ const regionTranslations = {
 };
 
 const typeTranslations = {
-  normal: 'Normal',
-  fire: 'Fuego',
-  water: 'Agua',
-  electric: 'Eléctrico',
-  grass: 'Planta',
-  ice: 'Hielo',
-  fighting: 'Lucha',
-  poison: 'Veneno',
-  ground: 'Tierra',
-  flying: 'Volador',
-  psychic: 'Psíquico',
-  bug: 'Bicho',
-  rock: 'Roca',
-  ghost: 'Fantasma',
-  dragon: 'Dragón',
-  steel: 'Acero',
-  fairy: 'Hada'
+  normal: 'Normal', fire: 'Fuego', water: 'Agua', electric: 'Eléctrico',
+  grass: 'Planta', ice: 'Hielo', fighting: 'Lucha', poison: 'Veneno',
+  ground: 'Tierra', flying: 'Volador', psychic: 'Psíquico', bug: 'Bicho',
+  rock: 'Roca', ghost: 'Fantasma', dragon: 'Dragón', steel: 'Acero', fairy: 'Hada'
 };
 
 onMounted(() => {
@@ -50,7 +39,9 @@ onMounted(() => {
 });
 
 const handleSearch = () => {
-    selectedType.value = '';
+    selectedType1.value = '';
+    selectedType2.value = '';
+    selectedRegion.value = '';
     selectedGeneration.value = '';
     if (searchQuery.value) {
         pokemonStore.searchPokemon(searchQuery.value);
@@ -60,20 +51,29 @@ const handleSearch = () => {
 };
 
 const handleTypeFilter = () => {
+    selectedRegion.value = '';
     selectedGeneration.value = '';
     searchQuery.value = '';
-    if (selectedType.value) {
-        pokemonStore.filterByType(selectedType.value);
+    if (selectedType1.value || selectedType2.value) {
+        pokemonStore.filterByType(selectedType1.value, selectedType2.value);
     } else {
         pokemonStore.fetchPokemonList();
     }
 };
 
 const handleGenFilter = () => {
-    selectedType.value = '';
+    selectedType1.value = '';
+    selectedType2.value = '';
     searchQuery.value = '';
-    if (selectedGeneration.value) {
-        pokemonStore.filterByGeneration(selectedGeneration.value);
+    // Unify region and generation since they refer to the exact same PokeAPI generation value
+    const finalGen = selectedRegion.value || selectedGeneration.value;
+    
+    // If one is selected, mirror the other if needed or just use active
+    if (selectedRegion.value) selectedGeneration.value = selectedRegion.value;
+    else if (selectedGeneration.value) selectedRegion.value = selectedGeneration.value;
+
+    if (finalGen) {
+        pokemonStore.filterByGeneration(finalGen);
     } else {
         pokemonStore.fetchPokemonList();
     }
@@ -82,35 +82,45 @@ const handleGenFilter = () => {
 const goToDetails = (id) => {
     router.push(`/pokemon/${id}`);
 };
-
-const loadMore = () => {
-    // Implement standard pagination or infinite scroll using store actions
-    // For now simple reload or next page if store supported "loadMore" appending
-    // But store just replaces list. Let's just keep it simple for MVP.
-};
 </script>
 
 <template>
     <div class="home-container">
         <div class="filters glass-panel">
-            <input 
-                v-model="searchQuery" 
-                @keyup.enter="handleSearch" 
-                placeholder="Buscar Pokemon..." 
-                class="search-input"
-            />
-            <select v-model="selectedType" @change="handleTypeFilter" class="filter-select">
-                <option value="">Todos los tipos</option>
-                <option v-for="type in pokemonStore.types" :key="type.name" :value="type.name">
-                    {{ typeTranslations[type.name] || type.name }}
-                </option>
-            </select>
-            <select v-model="selectedGeneration" @change="handleGenFilter" class="filter-select">
-                <option value="">Todas las regiones</option>
-                <option v-for="gen in pokemonStore.generations" :key="gen.name" :value="gen.name">
-                    {{ regionTranslations[gen.name] || gen.name }}
-                </option>
-            </select>
+            <div class="filter-row top-row">
+                <input 
+                    v-model="searchQuery" 
+                    @keyup.enter="handleSearch" 
+                    placeholder="Buscar Pokemon..." 
+                    class="search-input"
+                />
+                <select v-model="selectedRegion" @change="handleGenFilter" class="filter-select">
+                    <option value="">Todas las Regiones</option>
+                    <option v-for="gen in pokemonStore.generations" :key="'reg-'+gen.name" :value="gen.name">
+                        {{ regionTranslations[gen.name] || gen.name.toUpperCase() }}
+                    </option>
+                </select>
+            </div>
+            <div class="filter-row bottom-row">
+                <select v-model="selectedGeneration" @change="handleGenFilter" class="filter-select">
+                    <option value="">Todas las Generaciones</option>
+                    <option v-for="(gen, index) in pokemonStore.generations" :key="'gen-'+gen.name" :value="gen.name">
+                        Generación {{ index + 1 }}
+                    </option>
+                </select>
+                <select v-model="selectedType1" @change="handleTypeFilter" class="filter-select">
+                    <option value="">Tipo 1</option>
+                    <option v-for="type in pokemonStore.types" :key="'t1-'+type.name" :value="type.name">
+                        {{ typeTranslations[type.name] || type.name }}
+                    </option>
+                </select>
+                <select v-model="selectedType2" @change="handleTypeFilter" class="filter-select">
+                    <option value="">Tipo 2</option>
+                    <option v-for="type in pokemonStore.types" :key="'t2-'+type.name" :value="type.name">
+                        {{ typeTranslations[type.name] || type.name }}
+                    </option>
+                </select>
+            </div>
         </div>
 
         <div v-if="pokemonStore.loading" class="loading">
@@ -142,17 +152,31 @@ const loadMore = () => {
 .filters {
     padding: 1.5rem;
     display: flex;
+    flex-direction: column;
     gap: 1rem;
-    flex-wrap: wrap;
+}
+
+.filter-row {
+    display: flex;
+    gap: 1rem;
     align-items: center;
 }
 
+.top-row {
+    flex-wrap: wrap;
+}
+.bottom-row {
+    flex-wrap: wrap;
+}
+
 .search-input {
-    flex: 1;
+    flex: 2;
     min-width: 200px;
 }
 
 .filter-select {
+    flex: 1;
+    min-width: 130px;
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--glass-border);
     padding: 10px;
@@ -199,7 +223,7 @@ const loadMore = () => {
 
 /* Mobile Responsive */
 @media (max-width: 600px) {
-    .filters {
+    .filter-row {
         flex-direction: column;
         align-items: stretch;
     }

@@ -65,34 +65,35 @@ export const usePokemonStore = defineStore('pokemon', {
                 console.error(error);
             }
         },
-        async filterByType(type) {
+        async filterByType(type1, type2) {
             this.loading = true;
             try {
-                const response = await api.get(`/pokemon/type/${type}`);
-                this.pokemonList = response.data.pokemon.map(p => ({
-                    name: p.name,
-                    // We need to fetch details or assume structure. 
-                    // The backend returns { type, pokemon: [{name, url}] }
-                    // The list view expects {id, name, sprite, types}.
-                    // This is a limitation of the current backend 'by type' endpoint.
-                    // For now, we'll store basic info and maybe fetch details on render or fix backend.
-                    // Let's assume we can display just names or fetch details.
-                    // Actually better: let's fetch details for the first 20.
-                    url: p.url
-                }));
-                // Hotfix: fetch details for list items requires ID. Extracts ID from URL.
-                this.pokemonList = this.pokemonList.map(p => {
+                let fullList = [];
+                
+                if (type1 && type2) {
+                    const [res1, res2] = await Promise.all([
+                        api.get(`/pokemon/type/${type1}`),
+                        api.get(`/pokemon/type/${type2}`)
+                    ]);
+                    const names2 = res2.data.pokemon.map(p => p.name);
+                    fullList = res1.data.pokemon.filter(p => names2.includes(p.name));
+                } else {
+                    const activeType = type1 || type2;
+                    const response = await api.get(`/pokemon/type/${activeType}`);
+                    fullList = response.data.pokemon;
+                }
+
+                this.pokemonList = fullList.map(p => {
                     const id = p.url.split('/').filter(Boolean).pop();
                     return {
                         id,
                         name: p.name,
-                        sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`, // Fallback/Guess
-                        types: [type]
-                    }
+                        sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
+                        types: [type1, type2].filter(Boolean)
+                    };
                 });
-
             } catch (error) {
-                this.error = 'Failed to filter by type';
+                this.error = 'Failed to filter by types';
             } finally {
                 this.loading = false;
             }
