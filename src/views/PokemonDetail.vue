@@ -363,4 +363,36 @@ h2 { font-size: 1.4rem; margin-bottom: 1.2rem; }
     border-radius: 4px;
     font-weight: bold;
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .main-content, .two-col {
+        grid-template-columns: 1fr;
+    }
+    .physical-info {
+        gap: 1.5rem;
+    }
+    .stat-row {
+        gap: 0.5rem;
+    }
+    .stat-name {
+        width: 80px;
+        font-size: 0.85rem;
+    }
+    .moves-grid {
+        grid-template-columns: 1fr;
+    }
+    .evolution-row {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    .card {
+        padding: 1.5rem 1rem;
+    }
+}
 </style>
