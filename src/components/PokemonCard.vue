@@ -28,7 +28,8 @@ const toggleFavorite = async (event) => {
             await userStore.addFavorite(props.pokemon.id);
         }
     } catch (error) {
-        alert(error);
+        const msg = error.response?.data?.error || error.message || 'Error desconocido';
+        alert('Ups! Algo falló: ' + msg);
     }
 };
 
