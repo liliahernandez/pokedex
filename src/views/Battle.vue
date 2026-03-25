@@ -99,7 +99,7 @@ const hpColor = (pct) => {
             <div class="opponent-side" v-if="battleStore.activeOpponentPokemon">
                 <div class="hud glass-panel">
                     <div class="hud-top">
-                        <strong>{{ battleStore.activeOpponentPokemon.name.toUpperCase() }}</strong>
+                        <strong>{{ battleStore.activeOpponentPokemon?.name?.toUpperCase() }}</strong>
                         <span>Lv50</span>
                     </div>
                     <div class="hp-border">
@@ -120,7 +120,7 @@ const hpColor = (pct) => {
                 </div>
                 <div class="hud glass-panel">
                     <div class="hud-top">
-                        <strong>{{ battleStore.activeMyPokemon.name.toUpperCase() }}</strong>
+                        <strong>{{ battleStore.activeMyPokemon?.name?.toUpperCase() }}</strong>
                         <span>Lv50</span>
                     </div>
                     <div class="hp-border">
@@ -145,7 +145,7 @@ const hpColor = (pct) => {
                 </div>
 
                 <div v-else-if="!battleStore.hasSelectedMove && battleStore.currentBattle.status !== 'completed'" class="action-box">
-                    <p>¿Qué debe hacer {{ battleStore.activeMyPokemon?.name.toUpperCase() }}?</p>
+                    <p>¿Qué debe hacer {{ battleStore.activeMyPokemon?.name?.toUpperCase() }}?</p>
                     <div class="moves-grid">
                         <button 
                             v-for="(move, i) in battleStore.activeMyPokemon?.moves" 
