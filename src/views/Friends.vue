@@ -86,11 +86,15 @@ const acceptPending = async (friendId) => {
     }
 };
 
-const openChallengeModal = (friendId) => {
+const openChallengeModal = async (friendId) => {
     selectedFriendId.value = friendId;
     selectedTeamId.value = '';
     error.value = '';
     challengeSuccess.value = '';
+    
+    // Ensure teams are loaded before showing them
+    await userStore.fetchTeams();
+    
     showTeamModal.value = true;
 };
 
