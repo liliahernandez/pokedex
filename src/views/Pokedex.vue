@@ -228,20 +228,31 @@ const goToDetails = (id) => {
         align-items: center;
         flex-wrap: nowrap;
         gap: 0.5rem;
+        width: 100%;
     }
     
     .top-row .search-input {
         width: auto;
         flex: 1.5;
+        min-width: 0;
     }
     .top-row .filter-select {
         width: auto;
         flex: 1;
+        min-width: 0;
+        padding: 8px 4px;
+        font-size: 0.85rem;
     }
 
     .bottom-row .filter-select {
-        padding: 8px 4px;
-        font-size: 0.8rem;
+        padding: 8px 2px;
+        font-size: 0.75rem;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .filters {
+        padding: 1rem;
     }
 
     .home-container {
