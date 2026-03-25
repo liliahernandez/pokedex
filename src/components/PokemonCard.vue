@@ -1,5 +1,7 @@
 <script setup>
 import { computed } from 'vue';
+import { useUserStore } from '../stores/user';
+import { useAuthStore } from '../stores/auth';
 
 const props = defineProps({
   pokemon: {
@@ -7,6 +9,28 @@ const props = defineProps({
     required: true
   }
 });
+
+const userStore = useUserStore();
+const authStore = useAuthStore();
+
+const isFavorite = computed(() => {
+    if (!userStore.favorites || !props.pokemon) return false;
+    return userStore.favorites.some(f => f.pokemonId === props.pokemon.id);
+});
+
+const toggleFavorite = async (event) => {
+    event.stopPropagation();
+    if (!authStore.isAuthenticated) return alert('Por favor inicia sesión primero');
+    try {
+        if (isFavorite.value) {
+            await userStore.removeFavorite(props.pokemon.id);
+        } else {
+            await userStore.addFavorite(props.pokemon.id);
+        }
+    } catch (error) {
+        alert(error);
+    }
+};
 
 const typeColors = {
   normal: '#A8A77A',
@@ -65,6 +89,9 @@ const mainTypeColor = computed(() => {
 <template>
   <div class="pokemon-card glass-panel" :style="{ borderColor: mainTypeColor }">
     <div class="image-container" :style="{ background: getGradient(pokemon.types) }">
+        <button class="favorite-icon" @click.prevent="toggleFavorite" :class="{ active: isFavorite }">
+            {{ isFavorite ? '★' : '☆' }}
+        </button>
         <img :src="pokemon.sprite || pokemon.sprites?.front_default" :alt="pokemon.name" loading="lazy" />
     </div>
     <div class="info">
@@ -103,6 +130,34 @@ const mainTypeColor = computed(() => {
     align-items: center;
     position: relative;
     overflow: hidden;
+}
+
+.favorite-icon {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.5);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.favorite-icon:hover {
+    transform: scale(1.1);
+    background: rgba(0,0,0,0.8);
+}
+
+.favorite-icon.active {
+    color: #ffd700;
 }
 
 .image-container img {

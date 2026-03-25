@@ -60,9 +60,6 @@ const statTranslations = {
                     <span v-for="type in pokemon.types" :key="type.name" class="type-badge">{{ type.name }}</span>
                 </div>
             </div>
-             <button class="favorite-btn" @click="toggleFavorite" :class="{ active: isFavorite }">
-                {{ isFavorite ? '★ Quitar de Favoritos' : '☆ Añadir a Favoritos' }}
-            </button>
         </div>
 
         <div class="main-content">
