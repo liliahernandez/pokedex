@@ -13,9 +13,12 @@ const props = defineProps({
 const userStore = useUserStore();
 const authStore = useAuthStore();
 
+// Some views (like Favorites) give us the Mongo object where the real id is 'pokemonId'
+const pokeId = computed(() => props.pokemon.pokemonId || props.pokemon.id);
+
 const isFavorite = computed(() => {
     if (!userStore.favorites || !props.pokemon) return false;
-    return userStore.favorites.some(f => f.pokemonId === props.pokemon.id);
+    return userStore.favorites.some(f => f.pokemonId === pokeId.value);
 });
 
 const toggleFavorite = async (event) => {
@@ -23,9 +26,9 @@ const toggleFavorite = async (event) => {
     if (!authStore.isAuthenticated) return alert('Por favor inicia sesión primero');
     try {
         if (isFavorite.value) {
-            await userStore.removeFavorite(props.pokemon.id);
+            await userStore.removeFavorite(pokeId.value);
         } else {
-            await userStore.addFavorite(props.pokemon.id);
+            await userStore.addFavorite(pokeId.value);
         }
     } catch (error) {
         const msg = error.response?.data?.error || error.message || 'Error desconocido';
@@ -96,7 +99,7 @@ const mainTypeColor = computed(() => {
         <img :src="pokemon.sprite || pokemon.sprites?.front_default" :alt="pokemon.name" loading="lazy" />
     </div>
     <div class="info">
-        <span class="number">#{{ pokemon.id }}</span>
+        <span class="number">#{{ pokeId }}</span>
         <h3>{{ pokemon.name }}</h3>
         <div class="types">
             <span v-for="type in pokemon.types" :key="type" class="type-badge" :style="{ backgroundColor: typeColors[type] }">
