@@ -169,6 +169,13 @@ export const useUserStore = defineStore('user', {
                 this.fetchPendingRequests();
             });
 
+            socketService.on('battle_request', (data) => {
+                console.log('[UserStore] Incoming battle request:', data);
+                if (window.confirm(`¡${data.challengerName || 'Un amigo'} te ha desafiado a una batalla Pokémon!\n¿Aceptar y entrar a la arena?`)) {
+                    window.location.href = `/battle/${data.battleId}`;
+                }
+            });
+
             // BroadcastChannel for cross-context sync (SW to App)
             if (syncChannel) {
                 syncChannel.onmessage = async (event) => {

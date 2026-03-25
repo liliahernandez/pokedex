@@ -8,6 +8,7 @@ import PokemonDetail from '../views/PokemonDetail.vue';
 import Favorites from '../views/Favorites.vue';
 import Teams from '../views/Teams.vue';
 import Friends from '../views/Friends.vue';
+import Battle from '../views/Battle.vue';
 
 const routes = [
   { path: '/', component: Home },
@@ -18,6 +19,7 @@ const routes = [
   { path: '/favorites', component: Favorites, meta: { requiresAuth: true } },
   { path: '/teams', component: Teams, meta: { requiresAuth: true } },
   { path: '/friends', component: Friends, meta: { requiresAuth: true } },
+  { path: '/battle/:id', name: 'Battle', component: Battle, meta: { requiresAuth: true } },
 ];
 
 const router = createRouter({

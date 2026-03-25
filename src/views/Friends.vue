@@ -101,13 +101,17 @@ const sendChallenge = async () => {
     }
     
     try {
-        await userStore.createBattle(selectedFriendId.value, selectedTeamId.value);
+        const res = await userStore.createBattle(selectedFriendId.value, selectedTeamId.value);
+        showTeamModal.value = false;
         
-        challengeSuccess.value = '¡Desafío enviado!';
-        setTimeout(() => {
-            showTeamModal.value = false;
-            challengeSuccess.value = '';
-        }, 1500);
+        // Redirigir directamente al coliseo de batalla
+        if (res && res.battleId) {
+            import('vue-router').then(({ useRouter }) => {
+                 // In script setup top level this is safer, or we use window.location
+                 window.location.href = `/battle/${res.battleId}`;
+            });
+        }
+
     } catch (err) {
         error.value = typeof err === 'string' ? err : err.message || 'Error al enviar desafío';
     }
