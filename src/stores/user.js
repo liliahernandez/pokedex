@@ -146,6 +146,9 @@ export const useUserStore = defineStore('user', {
             }
         },
         listenForFriendEvents() {
+            if (this._listenersBound) return;
+            this._listenersBound = true;
+
             socketService.on('connect', () => {
                 console.log('[UserStore] Socket connected, refreshing data...');
                 this.fetchFriends();
