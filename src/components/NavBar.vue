@@ -38,6 +38,7 @@ const closeMenu = () => {
         <router-link to="/favorites" class="nav-link" @click="closeMenu">Favoritos</router-link>
         <router-link to="/teams" class="nav-link" @click="closeMenu">Equipos</router-link>
         <router-link to="/friends" class="nav-link" @click="closeMenu">Amigos</router-link>
+        <router-link to="/battles" class="nav-link" @click="closeMenu">Batallas</router-link>
         <div class="user-info">
             <span class="user-email">{{ authStore.user?.name || authStore.user?.email }}</span>
             <button @click="logout" class="btn logout-btn">Cerrar Sesión</button>
