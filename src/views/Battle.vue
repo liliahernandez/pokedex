@@ -86,6 +86,22 @@ const hpColor = (pct) => {
     return '#ef4444'; // Red
 };
 
+const winnerName = computed(() => {
+    const battle = battleStore.currentBattle;
+    if (!battle || !battle.winnerId) return 'Empate';
+    if (battle.winner) return battle.winner.name || battle.winner.email;
+    
+    // Fallbacks if winner object is not populated
+    const wId = battle.winnerId.toString();
+    if (wId === battle.challengerId?.toString() || wId === battle.challenger?._id?.toString()) {
+        return battle.challenger?.name || 'Tú (Retador)';
+    }
+    if (wId === battle.opponentId?.toString() || wId === battle.opponent?._id?.toString()) {
+        return battle.opponent?.name || 'El Rival';
+    }
+    return 'Desconocido';
+});
+
 </script>
 
 <template>
@@ -101,6 +117,12 @@ const hpColor = (pct) => {
                     <div class="hud-top">
                         <strong>{{ battleStore.activeOpponentPokemon?.name?.toUpperCase() }}</strong>
                         <span>Lv50</span>
+                    </div>
+                    
+                    <div class="team-roster">
+                        <div v-for="(p, idx) in battleStore.opponentTeam" :key="idx" class="mini-sprite" :class="{'fainted-mini': p.currentHp <= 0, 'active-mini': idx === battleStore.currentBattle.activePokemonOpponent}">
+                            <img :src="p.sprite" />
+                        </div>
                     </div>
                     <div class="hp-border">
                         <div class="hp-bar" :style="{ width: opHpPercent + '%', backgroundColor: hpColor(opHpPercent) }"></div>
@@ -123,6 +145,12 @@ const hpColor = (pct) => {
                         <strong>{{ battleStore.activeMyPokemon?.name?.toUpperCase() }}</strong>
                         <span>Lv50</span>
                     </div>
+
+                    <div class="team-roster">
+                        <div v-for="(p, idx) in battleStore.myTeam" :key="idx" class="mini-sprite" :class="{'fainted-mini': p.currentHp <= 0, 'active-mini': (battleStore.isChallenger ? battleStore.currentBattle.activePokemonChallenger : battleStore.currentBattle.activePokemonOpponent) === idx}">
+                            <img :src="p.sprite" />
+                        </div>
+                    </div>
                     <div class="hp-border">
                         <div class="hp-bar" :style="{ width: myHpPercent + '%', backgroundColor: hpColor(myHpPercent) }"></div>
                     </div>
@@ -136,7 +164,7 @@ const hpColor = (pct) => {
             <div class="battle-menu glass-panel">
                 <div v-if="showEndScreen" class="end-screen">
                     <h2>Completado</h2>
-                    <p>Ganador: {{ battleStore.currentBattle.winner ? battleStore.currentBattle.winner.name || battleStore.currentBattle.winner.email : 'Empate' }}</p>
+                    <p>Ganador: {{ winnerName }}</p>
                     <button class="btn" @click="router.push('/friends')">Volver</button>
                 </div>
                 
@@ -333,8 +361,44 @@ const hpColor = (pct) => {
     gap: 1rem;
 }
 
+/* Roster Mini Sprites */
+.team-roster {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 5px;
+    justify-content: flex-end;
+}
+
+.mini-sprite {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.2);
+}
+
+.mini-sprite img {
+    width: 140%;
+}
+
+.fainted-mini {
+    opacity: 0.3;
+    filter: grayscale(100%);
+    background: #ef4444;
+}
+
+.active-mini {
+    border-color: #22c55e;
+    box-shadow: 0 0 5px #22c55e;
+    background: rgba(34, 197, 94, 0.2);
+}
+
 @media (max-width: 600px) {
-    .hud { width: 150px; }
+    .hud { width: 160px; }
     .my-sprite img { width: 120px; left: 0; }
     .op-sprite img { width: 100px; right: 0; top: 30px; }
     .battle-menu { font-size: 0.9rem; padding: 0.5rem; }
