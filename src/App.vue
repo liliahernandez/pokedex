@@ -1,5 +1,6 @@
 <script setup>
 import NavBar from './components/NavBar.vue';
+import BattleInvite from './components/BattleInvite.vue';
 import NotificationPermissionPrompt from './components/NotificationPermissionPrompt.vue';
 import { useUserStore } from './stores/user';
 import { useAuthStore } from './stores/auth';
@@ -122,6 +123,7 @@ onMounted(async () => {
   </div>
 
   <NavBar />
+  <BattleInvite v-if="userStore.activeChallenge" :challenge="userStore.activeChallenge" @close="userStore.activeChallenge = null" />
   <NotificationPermissionPrompt />
   <router-view></router-view>
 </template>

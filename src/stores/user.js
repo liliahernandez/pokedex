@@ -12,7 +12,8 @@ export const useUserStore = defineStore('user', {
         favorites: [],
         teams: [],
         friends: [],
-        pendingRequests: []
+        pendingRequests: [],
+        activeChallenge: null
     }),
     actions: {
         async fetchFavorites() {
@@ -183,8 +184,15 @@ export const useUserStore = defineStore('user', {
 
             socketService.on('battle_request', (data) => {
                 console.log('[UserStore] Incoming battle request:', data);
-                // Removed window.confirm (intrusive popup) as requested.
-                // The user will see the native OS notification instead.
+                // Instead of window.confirm, we set the challenge in state for the UI to show a toast
+                this.activeChallenge = data;
+                
+                // Auto-clear after 30 seconds if not accepted
+                setTimeout(() => {
+                    if (this.activeChallenge?.battleId === data.battleId) {
+                        this.activeChallenge = null;
+                    }
+                }, 30000);
             });
 
             // BroadcastChannel for cross-context sync (SW to App)
