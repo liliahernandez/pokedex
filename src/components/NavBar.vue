@@ -42,7 +42,7 @@ const closeMenu = () => {
         <router-link to="/friends" class="nav-link" @click="closeMenu">Amigos</router-link>
         <router-link to="/battles" class="nav-link" @click="closeMenu">Batallas</router-link>
         <button v-if="pwaStore.isInstallable" class="nav-link install-nav-btn" @click="pwaStore.installApp(); closeMenu()">
-          ✨ Instalar App
+          ✨ Añadir a Inicio
         </button>
         <div class="user-info">
             <div class="user-name-stack">

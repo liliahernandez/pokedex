@@ -12,10 +12,10 @@ const handleInstall = () => {
   <div v-if="pwaStore.isInstallable" class="install-prompt glass-panel" @click="handleInstall">
     <div class="icon">📲</div>
     <div class="content">
-        <strong>¡Instala PokeApp!</strong>
-        <span>Añade a tu pantalla de inicio para jugar mejor.</span>
+        <strong>Añadir PokeApp a Inicio</strong>
+        <span>Disfruta de la mejor experiencia sin salir del navegador.</span>
     </div>
-    <button class="btn install-btn">Instalar</button>
+    <button class="btn install-btn">Añadir</button>
   </div>
 </template>
 
