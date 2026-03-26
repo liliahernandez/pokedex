@@ -1,9 +1,11 @@
 <script setup>
 import { ref } from 'vue';
 import { useAuthStore } from '../stores/auth';
+import { usePWAStore } from '../stores/pwa';
 import { useRouter } from 'vue-router';
 
 const authStore = useAuthStore();
+const pwaStore = usePWAStore();
 const router = useRouter();
 const isMenuOpen = ref(false);
 
@@ -39,6 +41,9 @@ const closeMenu = () => {
         <router-link to="/teams" class="nav-link" @click="closeMenu">Equipos</router-link>
         <router-link to="/friends" class="nav-link" @click="closeMenu">Amigos</router-link>
         <router-link to="/battles" class="nav-link" @click="closeMenu">Batallas</router-link>
+        <button v-if="pwaStore.isInstallable" class="nav-link install-nav-btn" @click="pwaStore.installApp(); closeMenu()">
+          ✨ Instalar App
+        </button>
         <div class="user-info">
             <div class="user-name-stack">
                 <span class="user-name">{{ authStore.user?.name }}</span>
@@ -150,6 +155,20 @@ const closeMenu = () => {
   box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
   transform: translateY(-2px);
   color: #f87171;
+}
+
+.install-nav-btn {
+    background: transparent;
+    border: none;
+    color: var(--primary-color);
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.install-nav-btn:hover {
+    color: var(--secondary-color);
+    background: rgba(var(--primary-rgb), 0.1);
 }
 
 .mobile-menu-btn {
