@@ -128,7 +128,7 @@ const winnerName = computed(() => {
                         <div class="hp-bar" :style="{ width: opHpPercent + '%', backgroundColor: hpColor(opHpPercent) }"></div>
                     </div>
                 </div>
-                <!-- Sprite (Usually we want opponent sprite normally front-facing) -->
+                <!-- Sprite (Static relative to HUD) -->
                 <div class="sprite op-sprite">
                     <img :src="battleStore.activeOpponentPokemon.sprite" :class="{ 'fainted': battleStore.activeOpponentPokemon.currentHp <= 0 }"/>
                 </div>
@@ -136,7 +136,7 @@ const winnerName = computed(() => {
 
             <!-- PLAYER SIDE (Bottom) -->
             <div class="player-side" v-if="battleStore.activeMyPokemon">
-                <!-- We flip player's sprite via CSS so it looks like it's facing away -->
+                <!-- We flip player's sprite via CSS -->
                 <div class="sprite my-sprite">
                     <img :src="battleStore.activeMyPokemon.sprite" :class="{ 'fainted': battleStore.activeMyPokemon.currentHp <= 0 }" />
                 </div>
@@ -163,9 +163,12 @@ const winnerName = computed(() => {
             <!-- BATTLE MENU / TEXT BOX -->
             <div class="battle-menu glass-panel">
                 <div v-if="showEndScreen" class="end-screen">
-                    <h2>Completado</h2>
-                    <p>Ganador: {{ winnerName }}</p>
-                    <button class="btn" @click="router.push('/friends')">Volver</button>
+                    <h2 style="color: #1d4ed8; text-shadow: 1px 1px 0px white;">¡Batalla Completada!</h2>
+                    <div class="battle-history-tag">
+                        Historial Oficial: <span>{{ battleStore.currentBattle.challenger?.name || 'Retador' }}</span>  vs  <span>{{ battleStore.currentBattle.opponent?.name || 'Oponente' }}</span>
+                    </div>
+                    <p class="winner-tag">🏆 Ganador: <strong>{{ winnerName }}</strong></p>
+                    <button class="btn challenge-btn" @click="router.push('/friends')">Volver a Amigos</button>
                 </div>
                 
                 <div v-else-if="currentVisualLog" class="text-box">
@@ -253,15 +256,9 @@ const winnerName = computed(() => {
 .opponent-side {
     display: flex;
     justify-content: flex-start;
-    align-items: flex-start;
-    position: relative;
+    align-items: center; /* keep sprite near hud */
+    gap: 1rem;
     padding-top: 1rem;
-}
-
-.op-sprite {
-    position: absolute;
-    right: 20px;
-    top: 50px;
 }
 
 .op-sprite img {
@@ -273,15 +270,9 @@ const winnerName = computed(() => {
 .player-side {
     display: flex;
     justify-content: flex-end;
-    align-items: flex-end;
-    position: relative;
+    align-items: center;
+    gap: 1rem;
     padding-bottom: 2rem;
-}
-
-.my-sprite {
-    position: absolute;
-    left: 20px;
-    bottom: 20px;
 }
 
 .my-sprite img {
@@ -361,6 +352,28 @@ const winnerName = computed(() => {
     gap: 1rem;
 }
 
+.battle-history-tag {
+    background: #f1f5f9;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px dotted #cbd5e1;
+    font-size: 1.1rem;
+}
+
+.battle-history-tag span {
+    font-weight: 800;
+    color: #475569;
+}
+
+.winner-tag {
+    font-size: 1.5rem !important;
+    background: #fef08a;
+    padding: 0.5rem 2rem;
+    border-radius: 12px;
+    border: 2px solid #eab308;
+    color: #854d0e;
+}
+
 /* Roster Mini Sprites */
 .team-roster {
     display: flex;
@@ -399,9 +412,13 @@ const winnerName = computed(() => {
 
 @media (max-width: 600px) {
     .hud { width: 160px; }
-    .my-sprite img { width: 120px; left: 0; }
-    .op-sprite img { width: 100px; right: 0; top: 30px; }
+    .my-sprite img { width: 100px; }
+    .op-sprite img { width: 80px; }
     .battle-menu { font-size: 0.9rem; padding: 0.5rem; }
     .moves-grid { grid-template-columns: 1fr; }
+    
+    .opponent-side, .player-side {
+        gap: 0.5rem;
+    }
 }
 </style>
