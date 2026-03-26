@@ -37,7 +37,7 @@ export const initSocket = (token) => {
         auth: {
             token: token
         },
-        transports: ['websocket']
+        transports: ['websocket', 'polling']
     });
 
     socket.on('connect', () => {

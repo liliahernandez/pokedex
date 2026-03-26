@@ -232,6 +232,14 @@ export const useUserStore = defineStore('user', {
                         this.fetchFriends();
                     }
                     
+                    if (event.data.type === 'BATTLE_REQUEST') {
+                        console.log('[UserStore] SW: Battle request received via message', event.data);
+                        this.activeChallenge = {
+                            battleId: event.data.battleId,
+                            challengerName: event.data.challengerName
+                        };
+                    }
+                    
                     if (event.data.type === 'ACCEPT_FRIEND_REQUEST' && event.data.requesterId) {
                         console.log('[UserStore] SW: Accepting friend request, requesterId:', event.data.requesterId);
                         await this.acceptFriendRequest(event.data.requesterId);

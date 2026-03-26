@@ -192,9 +192,22 @@ self.addEventListener('push', (event) => {
         options.tag = `battle-${payload.data.battleId}`;
     }
 
-    event.waitUntil(
-        self.registration.showNotification(title, options)
-    );
+    event.waitUntil((async () => {
+        // Show the native notification
+        await self.registration.showNotification(title, options);
+        
+        // ALSO: Notify any open windows so they can show the internal banner immediately
+        if (payload.data?.action === 'accept-battle') {
+            const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+            for (const client of windowClients) {
+                client.postMessage({
+                    type: 'BATTLE_REQUEST',
+                    battleId: payload.data.battleId,
+                    challengerName: payload.title.replace('¡Reto de Batalla! ⚔️', '').trim() || 'Un amigo'
+                });
+            }
+        }
+    })());
 });
 
 // Notification Click Handler
@@ -209,15 +222,18 @@ self.addEventListener('notificationclick', (event) => {
 
 async function openOrFocusApp(urlHash) {
     const baseUrl = new URL('/', self.location.origin).href;
-    const targetUrl = urlHash ? baseUrl + urlHash : baseUrl;
+    const cleanUrl = urlHash && urlHash.startsWith('/') ? urlHash : '/' + (urlHash || '');
+    const targetUrl = new URL(cleanUrl, self.location.origin).href;
     
     const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
     
     // Try to focus any existing window and send message
     for (let client of windowClients) {
         if ('focus' in client) {
+            if (urlHash && !client.url.includes(urlHash)) {
+                await client.navigate(targetUrl);
+            }
             await client.focus();
-            // Give the app a moment to gain focus, then send the action
             return client;
         }
     }
@@ -266,13 +282,13 @@ async function handleNotificationAction(action, data) {
     }
 
     if (action === 'accept-battle' && data.battleId) {
-        const battleUrl = `/#/battle/${data.battleId}`;
+        const battleUrl = `/battle/${data.battleId}`;
         await openOrFocusApp(battleUrl);
         return;
     }
 
     if (data.action === 'view-friends' || action === 'view-friends') {
-        await openOrFocusApp('/#/friends');
+        await openOrFocusApp('/friends');
         return;
     }
 
