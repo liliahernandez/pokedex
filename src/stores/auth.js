@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import api from '../services/api';
 import { initSocket, disconnectSocket } from '../services/socket';
 import { notificationService } from '../services/notifications';
-import { getAuthToken, saveAuthToken } from '../services/offlineStorage';
+import { getAuthToken, saveAuthToken, deleteAuthToken } from '../services/offlineStorage';
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
@@ -12,8 +12,8 @@ export const useAuthStore = defineStore('auth', {
     }),
     actions: {
         async initAuth() {
-            // 1. Try sessionStorage (fastest)
-            let token = sessionStorage.getItem('token');
+            // 1. Try localStorage (fastest and persistent)
+            let token = localStorage.getItem('token');
             
             // 2. Try IndexedDB (persistent fallback)
             if (!token) {
@@ -65,7 +65,7 @@ export const useAuthStore = defineStore('auth', {
             this.token = data.token;
             this.user = data.user;
             this.isAuthenticated = true;
-            sessionStorage.setItem('token', data.token);
+            localStorage.setItem('token', data.token);
             saveAuthToken(data.token); // Save for SW access
             
             // Connect to real-time events immediately
@@ -75,7 +75,8 @@ export const useAuthStore = defineStore('auth', {
             this.token = null;
             this.user = null;
             this.isAuthenticated = false;
-            sessionStorage.removeItem('token');
+            localStorage.removeItem('token');
+            deleteAuthToken(); // Clear IndexedDB
             disconnectSocket();
         },
         async fetchProfile() {

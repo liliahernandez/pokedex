@@ -27,6 +27,11 @@ export const getAuthToken = async () => {
     return db.get(AUTH_STORE, 'token');
 };
 
+export const deleteAuthToken = async () => {
+    const db = await initDB();
+    return db.delete(AUTH_STORE, 'token');
+};
+
 export const saveRequest = async (request) => {
     const db = await initDB();
     return db.add(STORE_NAME, request);
