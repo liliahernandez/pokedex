@@ -40,7 +40,10 @@ const closeMenu = () => {
         <router-link to="/friends" class="nav-link" @click="closeMenu">Amigos</router-link>
         <router-link to="/battles" class="nav-link" @click="closeMenu">Batallas</router-link>
         <div class="user-info">
-            <span class="user-email">{{ authStore.user?.name || authStore.user?.email }}</span>
+            <div class="user-name-stack">
+                <span class="user-name">{{ authStore.user?.name }}</span>
+                <span v-if="authStore.user?.nickname" class="user-nickname">({{ authStore.user?.nickname }})</span>
+            </div>
             <button @click="logout" class="btn logout-btn">Cerrar Sesión</button>
         </div>
       </template>
@@ -113,10 +116,22 @@ const closeMenu = () => {
     padding-left: 1.5rem;
 }
 
-.user-email {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  word-break: break-all;
+.user-name-stack {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.user-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.user-nickname {
+  font-size: 0.8rem;
+  color: var(--primary-color);
+  font-style: italic;
 }
 
 .logout-btn {

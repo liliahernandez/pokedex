@@ -89,15 +89,17 @@ const hpColor = (pct) => {
 const winnerName = computed(() => {
     const battle = battleStore.currentBattle;
     if (!battle || !battle.winnerId) return 'Empate';
-    if (battle.winner) return battle.winner.name || battle.winner.email;
+    if (battle.winner) return battle.winner.nickname || battle.winner.name || battle.winner.email;
     
     // Fallbacks if winner object is not populated
     const wId = battle.winnerId.toString();
     if (wId === battle.challengerId?.toString() || wId === battle.challenger?._id?.toString()) {
-        return battle.challenger?.name || 'Tú (Retador)';
+        const name = battle.challenger?.name || 'Tú (Retador)';
+        return battle.challenger?.nickname ? `${name} (${battle.challenger.nickname})` : name;
     }
     if (wId === battle.opponentId?.toString() || wId === battle.opponent?._id?.toString()) {
-        return battle.opponent?.name || 'El Rival';
+        const name = battle.opponent?.name || 'El Rival';
+        return battle.opponent?.nickname ? `${name} (${battle.opponent.nickname})` : name;
     }
     return 'Desconocido';
 });

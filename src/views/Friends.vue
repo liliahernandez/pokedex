@@ -164,7 +164,10 @@ const resetPWA = async () => {
         </div>
 
         <div class="profile-section glass-panel">
-            <h2>Perfil de {{ authStore.user?.name || authStore.user?.email.split('@')[0] }}</h2>
+            <div class="profile-header">
+                <h2>{{ authStore.user?.name }}</h2>
+                <h3 v-if="authStore.user?.nickname" class="nickname-sub">({{ authStore.user.nickname }})</h3>
+            </div>
             <div class="code-display">
                 <span>Código de Amigo:</span>
                 <strong @click="copyCode" class="code">{{ authStore.user?.friendCode }}</strong>
@@ -190,7 +193,10 @@ const resetPWA = async () => {
             <ul v-else>
                 <li v-for="friend in userStore.friends" :key="friend._id || friend.id" class="friend-item">
                     <div class="friend-info">
-                        <strong>{{ friend.name || friend.email }}</strong>
+                        <div class="name-box">
+                            <strong class="f-name">{{ friend.name || friend.email }}</strong>
+                            <span v-if="friend.nickname" class="f-nickname">({{ friend.nickname }})</span>
+                        </div>
                     </div>
                     <div class="friend-actions">
                         <button class="btn battle-btn" @click="openChallengeModal(friend._id || friend.id)">¡Desafiar!</button>
@@ -294,6 +300,33 @@ const resetPWA = async () => {
 .friend-actions {
     display: flex;
     gap: 0.5rem;
+}
+
+.profile-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.nickname-sub {
+    margin: 0 0 1rem 0;
+    color: var(--primary-color);
+    font-style: italic;
+    font-size: 1.1rem;
+}
+
+.name-box {
+    display: flex;
+    flex-direction: column;
+}
+
+.f-name {
+    font-size: 1.1rem;
+}
+
+.f-nickname {
+    font-size: 0.85rem;
+    color: var(--primary-color);
+    font-style: italic;
 }
 
 .delete-btn {

@@ -47,14 +47,16 @@ const deleteBattle = async (battleId) => {
 
 const getWinnerName = (battle) => {
     if (!battle.winnerId) return 'Empate';
-    if (battle.winner) return battle.winner.name || battle.winner.email;
+    if (battle.winner) return battle.winner.nickname || battle.winner.name || battle.winner.email;
     
     const wId = battle.winnerId.toString();
     if (wId === battle.challengerId?.toString() || wId === battle.challenger?._id?.toString()) {
-        return battle.challenger?.name || 'Retador';
+        const name = battle.challenger?.name || 'Retador';
+        return battle.challenger?.nickname ? `${name} (${battle.challenger.nickname})` : name;
     }
     if (wId === battle.opponentId?.toString() || wId === battle.opponent?._id?.toString()) {
-        return battle.opponent?.name || 'Rival';
+        const name = battle.opponent?.name || 'Rival';
+        return battle.opponent?.nickname ? `${name} (${battle.opponent.nickname})` : name;
     }
     return 'Desconocido';
 };
@@ -80,6 +82,7 @@ const getWinnerName = (battle) => {
                 <div class="battle-players">
                     <div class="player" :class="{'winner': battle.winnerId === battle.challengerId, 'loser': battle.winnerId && battle.winnerId !== battle.challengerId}">
                         <strong>{{ battle.challenger?.name || 'Retador' }}</strong>
+                        <span v-if="battle.challenger?.nickname" class="h-nickname">({{ battle.challenger.nickname }})</span>
                         <span class="role">Retador</span>
                     </div>
                     
@@ -87,6 +90,7 @@ const getWinnerName = (battle) => {
                     
                     <div class="player" :class="{'winner': battle.winnerId === battle.opponentId, 'loser': battle.winnerId && battle.winnerId !== battle.opponentId}">
                         <strong>{{ battle.opponent?.name || 'Oponente' }}</strong>
+                        <span v-if="battle.opponent?.nickname" class="h-nickname">({{ battle.opponent.nickname }})</span>
                         <span class="role">Oponente</span>
                     </div>
                 </div>
@@ -209,6 +213,12 @@ const getWinnerName = (battle) => {
 .player.loser strong {
     color: #94a3b8;
     text-decoration: line-through;
+}
+
+.h-nickname {
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    font-style: italic;
 }
 
 .role {
