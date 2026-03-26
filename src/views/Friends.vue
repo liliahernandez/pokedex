@@ -62,6 +62,7 @@ const sendFriendRequest = async () => {
         challengeSuccess.value = res.message || 'Solicitud enviada';
         setTimeout(() => challengeSuccess.value = '', 3000);
     } catch (err) {
+        if (err.isOfflineSync) return;
         error.value = err;
     }
 };
@@ -73,6 +74,7 @@ const removeFriend = async (friendId) => {
         successMessage.value = 'Amigo eliminado exitosamente';
         setTimeout(() => successMessage.value = '', 3000);
     } catch(err) {
+        if (err.isOfflineSync) return;
         alert(err);
     }
 };
@@ -84,6 +86,7 @@ const acceptPending = async (friendId) => {
         userStore.fetchPendingRequests();
         setTimeout(() => challengeSuccess.value = '', 3000);
     } catch (err) {
+        if (err.isOfflineSync) return;
         error.value = err;
     }
 };
@@ -119,6 +122,7 @@ const sendChallenge = async () => {
         }
 
     } catch (err) {
+        if (err.isOfflineSync) return;
         error.value = typeof err === 'string' ? err : err.message || 'Error al enviar desafío';
     }
 };

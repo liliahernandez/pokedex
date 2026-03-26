@@ -31,6 +31,7 @@ const toggleFavorite = async (event) => {
             await userStore.addFavorite(pokeId.value);
         }
     } catch (error) {
+        if (error.isOfflineSync) return; // Silent if background sync handled it
         const msg = error.response?.data?.error || error.message || 'Error desconocido';
         alert('Ups! Algo falló: ' + msg);
     }

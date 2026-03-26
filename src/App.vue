@@ -51,15 +51,15 @@ onMounted(async () => {
         const msg = event.data;
         if (msg.type === 'SYNC_PENDING') {
             syncStatus.value = 'pending';
-            syncMessage.value = 'Sin internet: tu acción quedó pendiente y se enviará automáticamente.';
+            syncMessage.value = '📡 Estás offline: tu cambio se guardará y sincronizará solo.';
             if (syncBannerTimeout) clearTimeout(syncBannerTimeout);
         } else if (msg.type === 'SYNC_STARTED') {
             syncStatus.value = 'syncing';
-            syncMessage.value = `Sincronizando ${msg.count} petición(es) pendientes...`;
+            syncMessage.value = `⏳ Sincronizando tus cambios pendientes...`;
             if (syncBannerTimeout) clearTimeout(syncBannerTimeout);
         } else if (msg.type === 'SYNC_COMPLETED') {
             syncStatus.value = 'success';
-            syncMessage.value = `Sincronización completada: ${msg.count} petición(es) enviadas.`;
+            syncMessage.value = `✅ ¡Listo! Todo se ha sincronizado correctamente.`;
             
             // Auto-refresh data invisibly
             if (authStore.isAuthenticated) {
@@ -125,11 +125,6 @@ onMounted(async () => {
 
 <template>
   <div v-if="syncStatus" :class="['global-sync-banner', syncStatus]">
-    <div class="sync-icon">
-        <span v-if="syncStatus === 'pending'">📡</span>
-        <span v-else-if="syncStatus === 'syncing'">⏳</span>
-        <span v-else-if="syncStatus === 'success'">✅</span>
-    </div>
     <div class="sync-text">{{ syncMessage }}</div>
   </div>
 
@@ -142,28 +137,38 @@ onMounted(async () => {
 
 <style scoped>
 .global-sync-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 14px 24px;
+    justify-content: center;
+    padding: 12px 20px;
     font-weight: 600;
-    font-size: 0.95rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    z-index: 9999;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    z-index: 10000;
+    animation: fadeInDown 0.4s ease-out;
 }
 .global-sync-banner.pending {
-    background: #dcfce7;
-    color: #166534;
-    border-left: 6px solid #22c55e;
+    background: #fefce8;
+    color: #854d0e;
+    border-bottom: 3px solid #eab308;
 }
 .global-sync-banner.syncing {
-    background: #fef08a;
-    color: #854d0e;
-    border-left: 6px solid #eab308;
+    background: #eff6ff;
+    color: #1e40af;
+    border-bottom: 3px solid #3b82f6;
 }
 .global-sync-banner.success {
-    background: #dcfce7;
+    background: #f0fdf4;
     color: #166534;
-    border-left: 6px solid #3b82f6; 
+    border-bottom: 3px solid #22c55e; 
+}
+
+@keyframes fadeInDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 </style>

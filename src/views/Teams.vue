@@ -94,19 +94,40 @@ const removePokemonFromSelection = (index) => {
 
 const createTeam = async () => {
     if (!teamName.value || selectedPokemonData.value.length === 0) return;
-    await userStore.createTeam(teamName.value, selectedPokemonData.value);
-    showingCreateModal.value = false;
+    try {
+        await userStore.createTeam(teamName.value, selectedPokemonData.value);
+        showingCreateModal.value = false;
+    } catch (err) {
+        if (err.isOfflineSync) {
+            showingCreateModal.value = false; // Close anyway, banner shows it's pending
+            return;
+        }
+        alert('Error al crear equipo: ' + (err.message || err));
+    }
 };
 
 const updateTeam = async () => {
     if (!editingTeamId.value || !teamName.value) return;
-    await userStore.updateTeam(editingTeamId.value, teamName.value, selectedPokemonData.value);
-    showingEditModal.value = false;
+    try {
+        await userStore.updateTeam(editingTeamId.value, teamName.value, selectedPokemonData.value);
+        showingEditModal.value = false;
+    } catch (err) {
+        if (err.isOfflineSync) {
+            showingEditModal.value = false;
+            return;
+        }
+        alert('Error al actualizar equipo: ' + (err.message || err));
+    }
 };
 
 const deleteTeam = async (id) => {
     if(confirm('¿Estás seguro de que quieres eliminar este equipo?')) {
-        await userStore.deleteTeam(id);
+        try {
+            await userStore.deleteTeam(id);
+        } catch (err) {
+            if (err.isOfflineSync) return;
+            alert('Error al eliminar equipo: ' + (err.message || err));
+        }
     }
 };
 </script>

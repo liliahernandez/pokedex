@@ -59,10 +59,10 @@ api.interceptors.response.use(
             const bc = new BroadcastChannel('pokedex-sync');
             bc.postMessage({ type: 'SYNC_PENDING' });
 
-            // Return a custom rejection so the UI can silently ignore it
+            // Return a custom rejection object that both stores and components can identify
             return Promise.reject({
                 isOfflineSync: true,
-                message: 'Offline Sync pending'
+                message: 'La orden ha sido guardada para enviarse luego'
             });
         }
         return Promise.reject(error);
