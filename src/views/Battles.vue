@@ -33,6 +33,18 @@ const formatDate = (dateString) => {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
+const deleteBattle = async (battleId) => {
+    if (!confirm('¿Seguro que deseas eliminar esta batalla del historial?')) return;
+    
+    try {
+        await api.delete(`/battles/${battleId}`);
+        battles.value = battles.value.filter(b => b._id !== battleId);
+    } catch (err) {
+        alert('Error al eliminar la batalla');
+        console.error(err);
+    }
+};
+
 const getWinnerName = (battle) => {
     if (!battle.winnerId) return 'Empate';
     if (battle.winner) return battle.winner.name || battle.winner.email;
@@ -83,9 +95,15 @@ const getWinnerName = (battle) => {
                     <div class="winner-badge">
                         🏆 Ganador: <strong>{{ getWinnerName(battle) }}</strong>
                     </div>
+                    <button class="btn delete-btn" @click.stop="deleteBattle(battle._id)">Eliminar</button>
                 </div>
                 <div class="battle-footer" v-else-if="battle.status === 'active'">
                     <button class="btn small primary" @click="router.push(`/battle/${battle._id}`)">Reconectar</button>
+                    <button class="btn small delete-btn ml-2" @click.stop="deleteBattle(battle._id)">Eliminar</button>
+                </div>
+                <div class="battle-footer" v-else-if="battle.status === 'pending'">
+                    <span class="status-msg">Esperando a que ambos jugadores se unan...</span>
+                    <button class="btn small delete-btn ml-2" @click.stop="deleteBattle(battle._id)">Cancelar</button>
                 </div>
             </div>
         </div>
@@ -219,5 +237,32 @@ const getWinnerName = (battle) => {
     padding: 0.5rem 1.5rem;
     border-radius: 8px;
     font-size: 1.1rem;
+    margin-right: 1rem;
+}
+
+.delete-btn {
+    background: transparent;
+    border: 1px solid #ef4444;
+    color: #ef4444;
+    padding: 0.3rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.delete-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+}
+
+.ml-2 {
+    margin-left: 0.5rem;
+}
+
+.status-msg {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-style: italic;
+    margin-right: 1rem;
 }
 </style>

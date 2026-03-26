@@ -164,10 +164,8 @@ const winnerName = computed(() => {
             <div class="battle-menu glass-panel">
                 <div v-if="showEndScreen" class="end-screen">
                     <h2 style="color: #1d4ed8; text-shadow: 1px 1px 0px white;">¡Batalla Completada!</h2>
-                    <div class="battle-history-tag">
-                        Historial Oficial: <span>{{ battleStore.currentBattle.challenger?.name || 'Retador' }}</span>  vs  <span>{{ battleStore.currentBattle.opponent?.name || 'Oponente' }}</span>
-                    </div>
-                    <p class="winner-tag">🏆 Ganador: <strong>{{ winnerName }}</strong></p>
+                    <br/>
+                    <button class="btn challenge-btn" @click="router.push('/battles')">Ir al Historial</button>
                     <button class="btn challenge-btn" @click="router.push('/friends')">Volver a Amigos</button>
                 </div>
                 
@@ -352,26 +350,9 @@ const winnerName = computed(() => {
     gap: 1rem;
 }
 
-.battle-history-tag {
-    background: #f1f5f9;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    border: 1px dotted #cbd5e1;
-    font-size: 1.1rem;
-}
-
-.battle-history-tag span {
-    font-weight: 800;
-    color: #475569;
-}
-
-.winner-tag {
-    font-size: 1.5rem !important;
-    background: #fef08a;
-    padding: 0.5rem 2rem;
-    border-radius: 12px;
-    border: 2px solid #eab308;
-    color: #854d0e;
+.end-screen h2 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
 }
 
 /* Roster Mini Sprites */
