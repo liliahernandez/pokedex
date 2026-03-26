@@ -13,6 +13,8 @@ const DB_NAME = 'offline-store';
 const AUTH_STORE = 'auth';
 const bc = new BroadcastChannel('pokedex-sync');
 
+const REQUESTS_STORE = 'requests';
+
 function openDBNative() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, 1);
@@ -22,6 +24,9 @@ function openDBNative() {
             const db = event.target.result;
             if (!db.objectStoreNames.contains(AUTH_STORE)) {
                 db.createObjectStore(AUTH_STORE);
+            }
+            if (!db.objectStoreNames.contains(REQUESTS_STORE)) {
+                db.createObjectStore(REQUESTS_STORE, { keyPath: 'id', autoIncrement: true });
             }
         };
     });
@@ -39,6 +44,19 @@ function getFromDB(storeName, key) {
     });
 }
 
+function getAllRequests() {
+    return openDBNative().then(db => {
+        return new Promise((resolve, reject) => {
+            if (!db.objectStoreNames.contains(REQUESTS_STORE)) return resolve([]);
+            const transaction = db.transaction(REQUESTS_STORE, 'readonly');
+            const store = transaction.objectStore(REQUESTS_STORE);
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    });
+}
+
 function saveToDB(storeName, key, value) {
     return openDBNative().then(db => {
         return new Promise((resolve, reject) => {
@@ -49,6 +67,66 @@ function saveToDB(storeName, key, value) {
             request.onerror = () => reject(request.error);
         });
     });
+}
+
+function deleteRequestNative(id) {
+    return openDBNative().then(db => {
+        return new Promise((resolve, reject) => {
+            if (!db.objectStoreNames.contains(REQUESTS_STORE)) return resolve();
+            const transaction = db.transaction(REQUESTS_STORE, 'readwrite');
+            const store = transaction.objectStore(REQUESTS_STORE);
+            const request = store.delete(id);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    });
+}
+
+self.addEventListener('sync', (event) => {
+    if (event.tag === 'replay-requests') {
+        event.waitUntil(replayOfflineRequests());
+    }
+});
+
+async function replayOfflineRequests() {
+    try {
+        const requests = await getAllRequests();
+        if (!requests || requests.length === 0) return;
+
+        console.log(`[SW] Background Sync sorting ${requests.length} pending offline requests...`);
+        const token = await getFromDB(AUTH_STORE, 'token');
+
+        for (const req of requests) {
+            try {
+                const headers = req.headers || {};
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const fetchOptions = {
+                    method: req.method,
+                    headers: headers,
+                };
+
+                if (req.body && req.method !== 'GET' && req.method !== 'HEAD') {
+                    fetchOptions.body = JSON.stringify(req.body);
+                }
+
+                const response = await fetch(req.url, fetchOptions);
+
+                // If request was successful or rejected by server (not a network issue), remove it from queue
+                if (response.ok || response.status < 500) {
+                    console.log(`[SW] Replay successful for: ${req.url}`);
+                    await deleteRequestNative(req.id);
+                }
+            } catch (error) {
+                console.error('[SW] Replay failed (still offline) for:', req.url, error);
+                // Keep it in IDB, it will be retried on next sync event
+            }
+        }
+    } catch (err) {
+        console.error('[SW] Error reading requests from IDB:', err);
+    }
 }
 
 let cachedApiUrl = 'https://be-production-c80c.up.railway.app'; 
