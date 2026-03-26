@@ -30,7 +30,11 @@ const processLogsQueue = () => {
 
 // Watch for array changes to trigger processing if idle
 watch(() => battleStore.turnLogs.length, (newLen, oldLen) => {
-    if (newLen > oldLen && !currentVisualLog.value) {
+    if (newLen > oldLen) {
+        // If we were waiting for the opponent, clear it to allow logs to play!
+        if (currentVisualLog.value === "Esperando al rival...") {
+            currentVisualLog.value = '';
+        }
         processLogsQueue();
     }
 });
@@ -54,15 +58,11 @@ onUnmounted(() => {
     battleStore.leaveBattleRoom(battleId);
 });
 
-let msgTimer = null;
-
 const selectMove = (moveName) => {
     if (battleStore.hasSelectedMove) return;
     battleStore.selectMove(battleId, moveName);
     currentVisualLog.value = "Esperando al rival...";
-    msgTimer = setTimeout(() => {
-        if(battleStore.hasSelectedMove) currentVisualLog.value = '';
-    }, 2000);
+    // We don't clear this with a timeout. It stays until the turn resolves!
 };
 
 // Computed Helpers for HP Bars

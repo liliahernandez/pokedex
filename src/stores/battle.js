@@ -73,6 +73,12 @@ export const useBattleStore = defineStore('battle', {
                 console.log('Player joined battle room:', data);
             });
 
+            socket.on('battle_error', (data) => {
+                console.error('Battle error from server:', data);
+                this.error = data.message;
+                this.hasSelectedMove = false; // Allow retrying
+            });
+
             socket.on('opponent_move_selected', (data) => {
                 // We can use this to show "Opponent is ready!"
                 console.log('Opponent selected move!');
