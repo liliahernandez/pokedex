@@ -10,6 +10,11 @@ import { subscribeToPushNotifications } from './services/pushSubscription';
 
 const userStore = useUserStore();
 const authStore = useAuthStore();
+
+const syncStatus = ref(null);
+const syncMessage = ref('');
+let syncBannerTimeout = null;
+
 // Start global listeners when authenticated
 watch(() => authStore.isAuthenticated, (val) => {
     if (val) {
@@ -39,6 +44,44 @@ onMounted(async () => {
         // Clean the URL so it doesn't re-trigger on refresh
         window.history.replaceState({}, '', '/');
     }
+
+    // Background Sync Listeners for Global Banner
+    const syncChannel = new BroadcastChannel('pokedex-sync');
+    syncChannel.onmessage = (event) => {
+        const msg = event.data;
+        if (msg.type === 'SYNC_PENDING') {
+            syncStatus.value = 'pending';
+            syncMessage.value = 'Sin internet: tu acción quedó pendiente y se enviará automáticamente.';
+            if (syncBannerTimeout) clearTimeout(syncBannerTimeout);
+        } else if (msg.type === 'SYNC_STARTED') {
+            syncStatus.value = 'syncing';
+            syncMessage.value = `Sincronizando ${msg.count} petición(es) pendientes...`;
+            if (syncBannerTimeout) clearTimeout(syncBannerTimeout);
+        } else if (msg.type === 'SYNC_COMPLETED') {
+            syncStatus.value = 'success';
+            syncMessage.value = `Sincronización completada: ${msg.count} petición(es) enviadas.`;
+            
+            // Auto-refresh data invisibly
+            if (authStore.isAuthenticated) {
+                userStore.fetchFriends();
+                userStore.fetchFavorites();
+                userStore.fetchTeams();
+            }
+
+            if (syncBannerTimeout) clearTimeout(syncBannerTimeout);
+            syncBannerTimeout = setTimeout(() => {
+                if (syncStatus.value === 'success') syncStatus.value = null;
+            }, 5000);
+        }
+    };
+
+    window.addEventListener('online', () => {
+        if (syncStatus.value === 'pending') {
+            navigator.serviceWorker.ready.then(reg => {
+                if(reg.sync) reg.sync.register('replay-requests');
+            });
+        }
+    });
 
     if ('serviceWorker' in navigator) {
         // Automatically skip waiting for new versions
@@ -81,6 +124,15 @@ onMounted(async () => {
 </script>
 
 <template>
+  <div v-if="syncStatus" :class="['global-sync-banner', syncStatus]">
+    <div class="sync-icon">
+        <span v-if="syncStatus === 'pending'">📡</span>
+        <span v-else-if="syncStatus === 'syncing'">⏳</span>
+        <span v-else-if="syncStatus === 'success'">✅</span>
+    </div>
+    <div class="sync-text">{{ syncMessage }}</div>
+  </div>
+
   <NavBar />
   <BattleNotification />
   <FriendRequestNotification />
@@ -89,4 +141,29 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.global-sync-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 24px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 9999;
+}
+.global-sync-banner.pending {
+    background: #dcfce7;
+    color: #166534;
+    border-left: 6px solid #22c55e;
+}
+.global-sync-banner.syncing {
+    background: #fef08a;
+    color: #854d0e;
+    border-left: 6px solid #eab308;
+}
+.global-sync-banner.success {
+    background: #dcfce7;
+    color: #166534;
+    border-left: 6px solid #3b82f6; 
+}
 </style>

@@ -94,7 +94,10 @@ async function replayOfflineRequests() {
         if (!requests || requests.length === 0) return;
 
         console.log(`[SW] Background Sync sorting ${requests.length} pending offline requests...`);
+        bc.postMessage({ type: 'SYNC_STARTED', count: requests.length });
+        
         const token = await getFromDB(AUTH_STORE, 'token');
+        let successCount = 0;
 
         for (const req of requests) {
             try {
@@ -118,12 +121,18 @@ async function replayOfflineRequests() {
                 if (response.ok || response.status < 500) {
                     console.log(`[SW] Replay successful for: ${req.url}`);
                     await deleteRequestNative(req.id);
+                    successCount++;
                 }
             } catch (error) {
                 console.error('[SW] Replay failed (still offline) for:', req.url, error);
                 // Keep it in IDB, it will be retried on next sync event
             }
         }
+        
+        if (successCount > 0) {
+            bc.postMessage({ type: 'SYNC_COMPLETED', count: successCount });
+        }
+
     } catch (err) {
         console.error('[SW] Error reading requests from IDB:', err);
     }

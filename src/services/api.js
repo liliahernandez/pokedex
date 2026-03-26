@@ -55,11 +55,14 @@ api.interceptors.response.use(
             } catch (storageError) {
                 console.error('[API] Failed to save offline request', storageError);
             }
+            // Notify global UI via BroadcastChannel
+            const bc = new BroadcastChannel('pokedex-sync');
+            bc.postMessage({ type: 'SYNC_PENDING' });
 
-            // Return a custom rejection so the UI can show a friendly message
+            // Return a custom rejection so the UI can silently ignore it
             return Promise.reject({
                 isOfflineSync: true,
-                message: '📡 Estás sin conexión. La orden ha sido guardada y se ejecutará automáticamente en cuanto regrese el internet.'
+                message: 'Offline Sync pending'
             });
         }
         return Promise.reject(error);
