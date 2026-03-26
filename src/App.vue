@@ -3,14 +3,11 @@ import NavBar from './components/NavBar.vue';
 import BattleNotification from './components/BattleNotification.vue';
 import FriendRequestNotification from './components/FriendRequestNotification.vue';
 import NotificationPermissionPrompt from './components/NotificationPermissionPrompt.vue';
-import InstallPrompt from './components/InstallPrompt.vue';
-import { usePWAStore } from './stores/pwa';
 import { useUserStore } from './stores/user';
 import { useAuthStore } from './stores/auth';
 import { watch, ref, onMounted } from 'vue';
 import { subscribeToPushNotifications } from './services/pushSubscription';
 
-const pwaStore = usePWAStore();
 const userStore = useUserStore();
 const authStore = useAuthStore();
 
@@ -104,20 +101,6 @@ onMounted(async () => {
             window.location.reload();
         });
         
-        // PWA Install Prompt Logic
-        window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevent Chrome 67 and earlier from automatically showing the prompt
-            e.preventDefault();
-            console.log('[PWA] beforeinstallprompt captured!');
-            // Stash the event so it can be triggered later.
-            pwaStore.setDeferredPrompt(e);
-        });
-
-        window.addEventListener('appinstalled', (evt) => {
-            console.log('[PWA] App was installed');
-            pwaStore.setIsInstalled(true);
-        });
-
         // Sync API URL to Service Worker
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
         console.log('[DEBUG] App API URL:', apiUrl);
@@ -143,7 +126,6 @@ onMounted(async () => {
   <NavBar />
   <BattleNotification />
   <FriendRequestNotification />
-  <InstallPrompt />
   <NotificationPermissionPrompt />
   <router-view></router-view>
 </template>
