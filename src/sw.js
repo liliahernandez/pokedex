@@ -265,6 +265,17 @@ async function handleNotificationAction(action, data) {
         return;
     }
 
+    if (action === 'accept-battle' && data.battleId) {
+        const battleUrl = `/#/battle/${data.battleId}`;
+        await openOrFocusApp(battleUrl);
+        return;
+    }
+
+    if (data.action === 'view-friends' || action === 'view-friends') {
+        await openOrFocusApp('/#/friends');
+        return;
+    }
+
     if (action === 'accept-battle') {
         await openOrFocusApp();
         return;
