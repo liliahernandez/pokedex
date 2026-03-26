@@ -28,6 +28,7 @@ export const useUserStore = defineStore('user', {
                 const response = await api.post('/favorites', { pokemonId });
                 this.favorites = response.data.favorites;
             } catch (error) {
+                if (error.isOfflineSync) throw error.message;
                 throw error;
             }
         },
@@ -36,6 +37,7 @@ export const useUserStore = defineStore('user', {
                 const response = await api.delete(`/favorites/${pokemonId}`);
                 this.favorites = response.data.favorites;
             } catch (error) {
+                if (error.isOfflineSync) throw error.message;
                 console.error('Error removing favorite', error);
             }
         },
@@ -54,6 +56,7 @@ export const useUserStore = defineStore('user', {
                 await api.post('/favorites/teams', payload);
                 this.fetchTeams();
             } catch (error) {
+                if (error.isOfflineSync) throw error.message;
                 throw error;
             }
         },
@@ -92,6 +95,7 @@ export const useUserStore = defineStore('user', {
 
                 return response.data;
             } catch (error) {
+                if (error.isOfflineSync) throw error.message;
                 throw error.response?.data?.error || 'Error al enviar solicitud de amistad';
             }
         },
@@ -101,6 +105,7 @@ export const useUserStore = defineStore('user', {
                 this.fetchFriends(); // Update local list
                 return response.data;
             } catch (error) {
+                if (error.isOfflineSync) throw error.message;
                 throw error.response?.data?.error || 'Error al aceptar solicitud';
             }
         },
@@ -109,6 +114,7 @@ export const useUserStore = defineStore('user', {
                 await api.delete(`/auth/friends/${friendId}`);
                 this.fetchFriends();
             } catch (error) {
+                if (error.isOfflineSync) throw error.message;
                 throw error.response?.data?.error || 'Error al eliminar amigo';
             }
         },
@@ -117,6 +123,7 @@ export const useUserStore = defineStore('user', {
                 await api.delete(`/favorites/teams/${teamId}`);
                 this.teams = this.teams.filter(t => t.id !== teamId);
             } catch (error) {
+                if (error.isOfflineSync) throw error.message;
                 console.error('Error deleting team', error);
                 throw error;
             }
@@ -133,6 +140,7 @@ export const useUserStore = defineStore('user', {
                     this.fetchTeams();
                 }
             } catch (error) {
+                if (error.isOfflineSync) throw error.message;
                 console.error('Error updating team', error);
                 throw error;
             }
@@ -142,6 +150,7 @@ export const useUserStore = defineStore('user', {
                 const response = await api.post('/battles', { opponentId, teamId });
                 return response.data;
             } catch (error) {
+                if (error.isOfflineSync) throw error.message;
                 throw error.response?.data?.error || 'Error al crear la batalla';
             }
         },

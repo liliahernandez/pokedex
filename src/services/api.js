@@ -55,6 +55,12 @@ api.interceptors.response.use(
             } catch (storageError) {
                 console.error('[API] Failed to save offline request', storageError);
             }
+
+            // Return a custom rejection so the UI can show a friendly message
+            return Promise.reject({
+                isOfflineSync: true,
+                message: '📡 Estás sin conexión. La orden ha sido guardada y se ejecutará automáticamente en cuanto regrese el internet.'
+            });
         }
         return Promise.reject(error);
     }

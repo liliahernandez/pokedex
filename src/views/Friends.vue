@@ -70,6 +70,8 @@ const removeFriend = async (friendId) => {
     if (!confirm('¿Seguro que deseas eliminar a este amigo?')) return;
     try {
         await userStore.removeFriend(friendId);
+        successMessage.value = 'Amigo eliminado exitosamente';
+        setTimeout(() => successMessage.value = '', 3000);
     } catch(err) {
         alert(err);
     }
