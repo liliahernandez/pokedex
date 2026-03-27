@@ -47,7 +47,7 @@ export const useUserStore = defineStore('user', {
                 const response = await api.get('/favorites/teams');
                 this.teams = response.data.teams;
             } catch (error) {
-                console.error('Error fetching teams', error);
+                console.warn('[UserStore] Failed to fetch teams, using cache if available');
             }
         },
         async createTeam(name, pokemonData) {

@@ -15,9 +15,12 @@ const fetchHistory = async () => {
     try {
         const response = await api.get('/battles');
         battles.value = response.data.battles || [];
+        error.value = '';
     } catch (err) {
-        error.value = 'Error al cargar el historial de batallas.';
-        console.error(err);
+        if (battles.value.length === 0) {
+            error.value = 'No se pudo cargar el historial. Verifica tu conexión.';
+        }
+        console.warn('[Battles] Fetch failed, using cache if available');
     } finally {
         loading.value = false;
     }

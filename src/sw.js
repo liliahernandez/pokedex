@@ -142,9 +142,13 @@ async function replayOfflineRequests() {
 
 // --- DYNAMIC CACHING (GET REQUESTS) ---
 
-// 1. Cache Pokedex API responses (Stale-While-Revalidate)
+// 1. Cache Pokedex API and User Content (Stale-While-Revalidate)
 registerRoute(
-    ({ url }) => url.pathname.includes('/pokemon'),
+    ({ url }) => 
+        url.pathname.includes('/pokemon') || 
+        url.pathname.includes('/battles') || 
+        url.pathname.includes('/favorites/teams') ||
+        url.pathname.includes('/auth/friends'),
     new StaleWhileRevalidate({
         cacheName: 'pokedex-api-cache',
         plugins: [
