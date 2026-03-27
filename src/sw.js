@@ -1,5 +1,8 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 import { clientsClaim } from 'workbox-core';
+import { registerRoute } from 'workbox-routing';
+import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies';
+import { ExpirationPlugin } from 'workbox-expiration';
 
 self.skipWaiting();
 clientsClaim();
@@ -132,11 +135,42 @@ async function replayOfflineRequests() {
         if (successCount > 0) {
             bc.postMessage({ type: 'SYNC_COMPLETED', count: successCount });
         }
-
     } catch (err) {
         console.error('[SW] Error reading requests from IDB:', err);
     }
 }
+
+// --- DYNAMIC CACHING (GET REQUESTS) ---
+
+// 1. Cache Pokedex API responses (Stale-While-Revalidate)
+registerRoute(
+    ({ url }) => url.pathname.includes('/pokemon'),
+    new StaleWhileRevalidate({
+        cacheName: 'pokedex-api-cache',
+        plugins: [
+            new ExpirationPlugin({
+                maxEntries: 100,
+                maxAgeSeconds: 7 * 24 * 60 * 60 // 7 days
+            })
+        ]
+    })
+);
+
+// 2. Cache Pokemon Images (Cache First)
+registerRoute(
+  ({ url }) => 
+    url.origin === 'https://raw.githubusercontent.com' && 
+    url.pathname.includes('/sprites/'),
+  new CacheFirst({
+    cacheName: 'pokemon-images',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 1000,
+        maxAgeSeconds: 30 * 24 * 60 * 60 // 30 days
+      })
+    ]
+  })
+);
 
 let cachedApiUrl = 'https://be-production-c80c.up.railway.app'; 
 

@@ -20,8 +20,14 @@ export const usePokemonStore = defineStore('pokemon', {
                 this.pokemonList = response.data.results;
                 this.nextPage = response.data.next;
                 this.previousPage = response.data.previous;
+                this.error = null;
             } catch (error) {
-                this.error = 'Failed to fetch Pokemon';
+                // If offline and we have no data, show error. If we have data, keep it.
+                if (this.pokemonList.length === 0) {
+                    this.error = 'No se pudo cargar la Pokedex. Verifica tu conexión.';
+                } else {
+                    console.log('[Store] Fetch failed, keeping existing data.');
+                }
             } finally {
                 this.loading = false;
             }
@@ -54,7 +60,7 @@ export const usePokemonStore = defineStore('pokemon', {
                 const response = await api.get('/pokemon/types');
                 this.types = response.data.types;
             } catch (error) {
-                console.error(error);
+                console.warn('[Store] Failed to fetch types, using cache if available');
             }
         },
         async fetchGenerations() {
@@ -62,7 +68,7 @@ export const usePokemonStore = defineStore('pokemon', {
                 const response = await api.get('/pokemon/generations');
                 this.generations = response.data.generations;
             } catch (error) {
-                console.error(error);
+                console.warn('[Store] Failed to fetch generations, using cache if available');
             }
         },
         async filterByType(type1, type2) {
